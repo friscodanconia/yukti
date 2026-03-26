@@ -12,7 +12,7 @@
  */
 
 import { SYSTEM_PROMPT, buildUserPrompt } from "./llm/prompt";
-import { classifyComplexity, callLLM } from "./llm/router";
+import { classifyComplexity, callLLM, CLARIFY_PROMPT } from "./llm/router";
 import { validateWorkerCode, injectBaseCSS } from "./toolkit/validate";
 import { BASE_CSS } from "./toolkit/base-css";
 import { generateFetchGuard } from "./toolkit/outbound";
@@ -20,6 +20,33 @@ import { generateFetchGuard } from "./toolkit/outbound";
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // ── API: Check if query needs clarification ────────────
+    if (url.pathname === "/api/clarify" && request.method === "POST") {
+      try {
+        const { topic } = await request.json<{ topic: string }>();
+        if (!topic?.trim()) {
+          return Response.json({ action: "build" });
+        }
+        if (!env.OPENROUTER_API_KEY) {
+          return Response.json({ action: "build" }); // fail open
+        }
+
+        const result = await callLLM(env.OPENROUTER_API_KEY, "fast", CLARIFY_PROMPT, topic);
+        let parsed: { action: string; questions?: unknown[] };
+        try {
+          // Strip markdown fences if present
+          const cleaned = result.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+          parsed = JSON.parse(cleaned);
+        } catch {
+          return Response.json({ action: "build" }); // fail open
+        }
+
+        return Response.json(parsed);
+      } catch {
+        return Response.json({ action: "build" }); // fail open — don't block generation
+      }
+    }
 
     // ── API: Generate a tool ─────────────────────────────────
     if (url.pathname === "/api/explain" && request.method === "POST") {

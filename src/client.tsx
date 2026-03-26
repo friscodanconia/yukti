@@ -195,6 +195,15 @@ function App() {
     granted?: string[];
   } | null>(null);
   const [showInspector, setShowInspector] = useState(false);
+  const [clarifying, setClarifying] = useState(false);
+  const [clarifyQuestions, setClarifyQuestions] = useState<{
+    id: string;
+    question: string;
+    options: string[];
+    allowCustom: boolean;
+  }[] | null>(null);
+  const [clarifyAnswers, setClarifyAnswers] = useState<Record<string, string>>({});
+  const [clarifyCustomInputs, setClarifyCustomInputs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -329,13 +338,60 @@ function App() {
     }
   }, []);
 
+  const submitQuery = async (topic: string) => {
+    if (!topic.trim()) return;
+    // Reset clarification state
+    setClarifying(true);
+    setClarifyQuestions(null);
+    setClarifyAnswers({});
+    setClarifyCustomInputs({});
+
+    try {
+      const res = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic }),
+      });
+      const data = await res.json() as { action: string; questions?: { id: string; question: string; options: string[]; allowCustom: boolean }[] };
+
+      if (data.action === "clarify" && data.questions?.length) {
+        setClarifyQuestions(data.questions);
+        setClarifying(false);
+        return; // show clarification UI
+      }
+    } catch {
+      // fail open — just build
+    }
+
+    setClarifying(false);
+    setClarifyQuestions(null);
+    generate(topic);
+  };
+
+  const handleClarifySubmit = () => {
+    // Enrich the original query with answers
+    const enrichments = Object.entries(clarifyAnswers)
+      .map(([id, answer]) => {
+        if (answer === "__custom__") return clarifyCustomInputs[id] || "";
+        return answer;
+      })
+      .filter(Boolean);
+
+    const enrichedQuery = query + " (" + enrichments.join(", ") + ")";
+    setClarifyQuestions(null);
+    setClarifyAnswers({});
+    setClarifyCustomInputs({});
+    generate(enrichedQuery);
+  };
+
   const handleSubmit = (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (query.trim()) generate(query);
+    if (query.trim()) submitQuery(query);
   };
 
   const hasResult = !!(html || loading || error || runId);
+  const showClarification = !!(clarifyQuestions && clarifyQuestions.length > 0);
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
@@ -377,6 +433,82 @@ function App() {
               </button>
             </form>
 
+            {/* Clarification UI */}
+            {clarifying && (
+              <div className="text-center py-6 text-sm text-[#78716C]">Analyzing your question...</div>
+            )}
+
+            {showClarification && (
+              <div className="mb-8 bg-white border-[1.5px] border-[#E7E5E4] rounded-xl p-5">
+                <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-[#A8A29E] mb-4">
+                  Quick question{clarifyQuestions!.length > 1 ? "s" : ""} before we build
+                </div>
+                <div className="flex flex-col gap-5">
+                  {clarifyQuestions!.map((q) => (
+                    <div key={q.id}>
+                      <div className="text-sm font-medium text-[#1C1917] mb-2">{q.question}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {q.options.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setClarifyAnswers((prev) => ({ ...prev, [q.id]: opt }))}
+                            className={`px-3.5 py-1.5 text-[13px] font-medium rounded-lg border transition-all ${
+                              clarifyAnswers[q.id] === opt
+                                ? "bg-[#C2410C] text-white border-[#C2410C]"
+                                : "bg-[#FAFAF8] border-[#E5E3DF] text-[#44403C] hover:border-[#C2410C]"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                        {q.allowCustom && (
+                          <button
+                            type="button"
+                            onClick={() => setClarifyAnswers((prev) => ({ ...prev, [q.id]: "__custom__" }))}
+                            className={`px-3.5 py-1.5 text-[13px] font-medium rounded-lg border transition-all ${
+                              clarifyAnswers[q.id] === "__custom__"
+                                ? "bg-[#C2410C] text-white border-[#C2410C]"
+                                : "bg-[#FAFAF8] border-[#E5E3DF] text-[#44403C] hover:border-[#C2410C]"
+                            }`}
+                          >
+                            Other
+                          </button>
+                        )}
+                      </div>
+                      {clarifyAnswers[q.id] === "__custom__" && (
+                        <input
+                          type="text"
+                          placeholder="Type your answer..."
+                          value={clarifyCustomInputs[q.id] || ""}
+                          onChange={(e) => setClarifyCustomInputs((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                          className="mt-2 w-full px-3 py-2 text-sm bg-white border border-[#E5E3DF] rounded-lg outline-none focus:border-[#C2410C]"
+                          autoFocus
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 mt-5">
+                  <button
+                    type="button"
+                    onClick={handleClarifySubmit}
+                    disabled={Object.keys(clarifyAnswers).length === 0}
+                    className="px-5 py-2 bg-[#C2410C] text-white text-sm font-semibold rounded-lg hover:bg-[#9A3412] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    Build it
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setClarifyQuestions(null); generate(query); }}
+                    className="px-5 py-2 text-sm font-medium text-[#78716C] hover:text-[#1C1917] transition-colors"
+                  >
+                    Skip, build anyway
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {EXAMPLE_CATEGORIES.map((cat) => (
                 <div
@@ -395,7 +527,7 @@ function App() {
                       <button
                         type="button"
                         key={q}
-                        onClick={() => { setQuery(q); generate(q); }}
+                        onClick={() => { setQuery(q); submitQuery(q); }}
                         className="text-left text-[13px] font-medium text-[#1C1917] leading-snug transition-colors"
                         onMouseEnter={(e) => (e.currentTarget.style.color = cat.color)}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#1C1917")}

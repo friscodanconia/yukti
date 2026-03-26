@@ -187,26 +187,28 @@ IMPORTANT:
 - NEVER show an empty page or just an error message. Always render something useful.
 - A base CSS stylesheet is automatically injected. You get these classes for free:
 
-**Layout:** .section, .card (white rounded container with shadow — USE THIS to group related controls), .grid-2, .grid-3, .grid-4
-**Panels:** .panel (white container), .panel.warm (warm tint), .panel.cool (blue tint), .panel.green (green tint) — use for side-by-side comparisons
-**Typography:** h1, h2, h3, p, .subtitle, .card-header (uppercase label inside a card)
-**Controls:** .control (wrapper), label, .val (accent-colored value), input[type=range], select, button, button.primary
-**Output:** .output (white card), .output.highlight (accent-bordered), .output .label, .output .value, .output .value.green/.red/.amber, .output .sub (small subtitle under value)
-**Result banner:** .result-banner (big hero result with gradient bg), .result-banner .value, .result-banner .label
-**Comparison:** .vs-grid (3-col grid: left | divider | right), .vs-col, .vs-divider (centered "vs" text)
-**Table:** table, th, td, td.win (green), td.lose (red)
-**Meter:** .meter-row, .meter-label, .meter-bar, .meter-fill, .meter-value — horizontal bar chart rows
+**Layout:** .section, .card (cream rounded container with shadow + .card-header uppercase label — USE THIS to group sliders/controls), .grid-2, .grid-3, .grid-4
+**Panels:** .panel (cream container), .panel.warm (warm peach tint), .panel.cool (blue tint), .panel.green (green tint), .panel.muted (darker cream)
+**Typography:** h1, h2, h3, p, .subtitle, .card-header (uppercase label inside a card with bottom border)
+**Controls:** .control (wrapper), label, .val (terracotta value in peach badge), input[type=range], select, button, button.primary, button.accent
+**Output:** .output (cream card), .output.highlight (DARK bg with cream text — use for PRIMARY metric), .output .label, .output .value, .output .value.green/.red/.amber, .output .sub (subtitle)
+**Result banner:** .result-banner (dark gradient hero with radial glow — use for THE ONE big number), .result-banner .value (2.5rem), .result-banner .label, .result-banner .sub
+**Comparison:** .vs-grid (connected 3-col: warm left | divider | green right), .vs-col, .vs-divider (centered "vs" on muted bg), .vs-badge.win (terracotta callout), .vs-badge.alt (muted note)
+**Table:** table, th, td, td.win (green), td.lose (red). Color-code the tax/amount column — green for nil/low, amber for mid, red for high.
+**Meter:** .meter-row, .meter-label, .meter-bar, .meter-fill (gradient default), .meter-fill.green/.red/.muted, .meter-value — use different fill colors per row for visual richness
 **Tags:** .tag.green, .tag.red, .tag.amber, .tag.gray
 **Tabs:** .tab-bar, .tab, .tab.active
 **Progress:** .progress-bar, .progress-fill, .progress-fill.green
 **Other:** .divider, .sources, .fade
 
 IMPORTANT DESIGN RULES:
-- Wrap groups of related sliders inside a .card container. Never leave sliders floating on the bare page.
-- For comparisons (X vs Y), use .vs-grid with .panel.warm and .panel.green for visual contrast.
-- Put the most important result in a .result-banner or .output.highlight.
-- Keep .output .value to one number only. No labels inside the value — use .sub for context.
+- Wrap groups of related sliders inside a .card container with a .card-header label. Never leave sliders floating on the bare page.
+- For comparisons (X vs Y), use .vs-grid with .vs-col and .vs-divider. Add a .vs-badge.win to highlight the winner ("Saves ₹35,100") and .vs-badge.alt for the other side's note.
+- Put the ONE most important result in a .result-banner. Put 2-3 supporting metrics in a .grid-3 of .output cards, with the primary one using .output.highlight (dark bg).
+- Keep .output .value to one number only. No labels inside the value — use .label above and .sub below for context.
 - The page background is warm cream (#f5ede0). Cards are raised cream (#faf6ef) with glass-card borders. This creates layered warmth — NOT a flat white page. NEVER set background to white or near-white.
+- Color-code table values: use green for favorable/nil amounts, terracotta for mid-range, red for high amounts. Don't leave all values in the same gray — visual differentiation makes data scannable.
+- For meter bars (.meter-fill), use different color classes per row (.green for good, default terracotta for neutral, .red for bad, .muted for minor) to create visual richness instead of monotone bars.
 
 - Use these classes. Do NOT write CSS for basics (fonts, colors, spacing). Only add <style> for custom layout needs specific to your page.
 - Colors: text #1c1917, secondary #44403c, muted #96897a, bg #f5ede0 (warm cream — NOT white), accent #c2652a (terracotta)
@@ -297,7 +299,8 @@ export default {
 <h1>Income Tax Calculator</h1>
 <p class="subtitle">FY 2025-26 — Old vs New Regime</p>
 
-<div class="section">
+<div class="card">
+  <div class="card-header">Adjust Parameters</div>
   <div class="control">
     <label>Annual Income <span class="val" id="income-val">₹12,00,000</span></label>
     <input type="range" id="income" min="300000" max="10000000" step="50000" value="1200000" oninput="calc()">
@@ -310,6 +313,12 @@ export default {
 </div>
 
 <div id="result"></div>
+
+<div class="sources">
+  <p><strong>Sources:</strong> Income Tax Act 2025. Budget 2025-26 slab rates.</p>
+  <p><strong>Assumptions:</strong> Standard deduction ₹75,000 (New) / ₹50,000 (Old). 4% Health & Education Cess.</p>
+  <p><strong>Limitations:</strong> Does not include HRA, 80C, 80D, or other chapter VI-A deductions.</p>
+</div>
 
 <script>
 let regime = 'new';
@@ -338,31 +347,36 @@ function calc() {
   const income = +document.getElementById('income').value;
   document.getElementById('income-val').textContent = fmt(income);
   const slabs = regime === 'new' ? newSlabs : oldSlabs;
-  const stdDeduction = 75000;
+  const stdDeduction = regime === 'new' ? 75000 : 50000;
   const taxableIncome = Math.max(0, income - stdDeduction);
   const tax = taxFor(taxableIncome, slabs);
   const cess = tax * 0.04;
   const total = tax + cess;
   const effective = income > 0 ? (total / income * 100).toFixed(1) : '0.0';
   const monthly = total / 12;
-
-  let breakdownHTML = '<table><tr><th>Slab</th><th>Rate</th><th>Tax</th></tr>';
-  for (const [lo, hi, rate] of slabs) {
-    if (taxableIncome <= lo) break;
-    const amt = (Math.min(taxableIncome, hi) - lo) * rate;
-    const hiLabel = hi === Infinity ? 'Above ' + fmt(lo) : fmt(lo) + ' – ' + fmt(hi);
-    breakdownHTML += '<tr><td>' + hiLabel + '</td><td>' + (rate*100) + '%</td><td>' + fmt(amt) + '</td></tr>';
-  }
-  breakdownHTML += '</table>';
+  const takeHome = income - total;
 
   document.getElementById('result').innerHTML =
-    '<div class="grid-3" style="margin-bottom:1.25rem">' +
-      '<div class="output highlight"><div class="label">Total Tax</div><div class="value">' + fmt(total) + '</div></div>' +
-      '<div class="output"><div class="label">Monthly</div><div class="value">' + fmt(monthly) + '</div></div>' +
-      '<div class="output"><div class="label">Effective Rate</div><div class="value">' + effective + '%</div></div>' +
+    '<div class="result-banner"><div class="value">' + fmt(total) + '</div><div class="label">Total Tax Payable</div><div class="sub">' + regime.charAt(0).toUpperCase() + regime.slice(1) + ' Regime · After 4% Cess</div></div>' +
+    '<div class="grid-3" style="margin:1rem 0">' +
+      '<div class="output"><div class="label">Effective Rate</div><div class="value">' + effective + '%</div><div class="sub">on gross income</div></div>' +
+      '<div class="output"><div class="label">Monthly TDS</div><div class="value">' + fmt(monthly) + '</div><div class="sub">per month</div></div>' +
+      '<div class="output"><div class="label">Take-Home</div><div class="value green">' + fmt(takeHome) + '</div><div class="sub">annual net</div></div>' +
     '</div>' +
-    '<h3>Slab Breakdown</h3>' + breakdownHTML +
-    '<p style="margin-top:1rem">Standard deduction of ' + fmt(stdDeduction) + ' applied. Includes 4% Health & Education Cess.</p>';
+    '<div class="card"><div class="card-header">Slab Breakdown</div>' + slabTable(taxableIncome, slabs) + '</div>';
+}
+
+function slabTable(taxable, slabs) {
+  var h = '<table><tr><th>Slab</th><th>Rate</th><th>Tax</th></tr>';
+  for (var i = 0; i < slabs.length; i++) {
+    var lo = slabs[i][0], hi = slabs[i][1], rate = slabs[i][2];
+    if (taxable <= lo) break;
+    var amt = (Math.min(taxable, hi) - lo) * rate;
+    var hiLabel = hi === Infinity ? 'Above ' + fmt(lo) : fmt(lo) + ' - ' + fmt(hi);
+    h += '<tr><td>' + hiLabel + '</td><td>' + (rate*100) + '%</td><td>' + fmt(amt) + '</td></tr>';
+  }
+  h += '</table>';
+  return h;
 }
 calc();
 </script>

@@ -58,6 +58,37 @@ export function classifyComplexity(query: string): ModelTier {
 /**
  * Call the LLM via OpenRouter and get back the JSON response.
  */
+/**
+ * Prompt for the ambiguity classifier.
+ * Returns JSON: either { action: "build" } or { action: "clarify", questions: [...] }
+ */
+export const CLARIFY_PROMPT = `You decide whether a user's question has enough context to build an interactive tool, or needs 1-3 quick clarifying questions first.
+
+Rules:
+- If the question is self-contained (e.g., "how do I make butter chicken", "any earthquakes today"), return { "action": "build" }.
+- If the question depends on implicit context the user hasn't provided — country, city, currency, personal details like age/income bracket, or which specific variant they mean — return clarifying questions.
+- Maximum 3 questions. Each question has 3-5 suggested options plus allowCustom: true so the user can type their own.
+- Keep questions SHORT (under 10 words). Keep options SHORT (1-3 words each).
+- Only ask questions that genuinely change the output. Don't ask for preferences that can be sliders in the tool.
+
+Return ONLY valid JSON in one of these formats:
+
+Format 1 — no clarification needed:
+{ "action": "build" }
+
+Format 2 — clarification needed:
+{
+  "action": "clarify",
+  "questions": [
+    {
+      "id": "country",
+      "question": "Which country's tax system?",
+      "options": ["India", "US", "UK"],
+      "allowCustom": true
+    }
+  ]
+}`;
+
 export async function callLLM(
   apiKey: string,
   tier: ModelTier,
