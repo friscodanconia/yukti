@@ -77,96 +77,104 @@ function removeTool(runId: string) {
   localStorage.setItem("yukti-tools", JSON.stringify(tools));
 }
 
-// ─── Pipeline Animation ─────────────────────────────────────
-
-const STAGES = [
-  { icon: "🔍", name: "Understanding", action: "Parse", time: "1.2s" },
-  { icon: "🧠", name: "Reasoning", action: "Plan", time: "2.1s" },
-  { icon: "⚡", name: "Code Gen", action: "Write", time: "8.4s" },
-  { icon: "🔒", name: "Sandbox", action: "Isolate", time: "0.3s" },
-  { icon: "✨", name: "Render", action: "Build", time: "0.1s" },
+const BUILD_PHASES = [
+  { label: "Understanding your question", detail: "Analyzing intent and complexity", duration: 2000 },
+  { label: "Selecting data sources", detail: "Choosing the right APIs", duration: 2500 },
+  { label: "Writing the code", detail: "Generating a custom Worker module", duration: 15000 },
+  { label: "Securing the sandbox", detail: "Setting capabilities and network policy", duration: 1500 },
+  { label: "Executing in isolate", detail: "Running in Cloudflare V8 sandbox", duration: 2000 },
 ];
 
 function BuildingPipeline() {
-  const [activeStage, setActiveStage] = useState(0);
+  const [phase, setPhase] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const timings = [1200, 2100, 12000, 800, 600];
-    let timeout: ReturnType<typeof setTimeout>;
-    let current = 0;
+    const start = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    function advance() {
-      if (current < STAGES.length - 1) {
+  useEffect(() => {
+    let current = 0;
+    function next() {
+      if (current < BUILD_PHASES.length - 1) {
         current++;
-        setActiveStage(current);
-        timeout = setTimeout(advance, timings[current] || 2000);
+        setPhase(current);
+        setTimeout(next, BUILD_PHASES[current].duration);
       }
     }
-
-    timeout = setTimeout(advance, timings[0]);
-    return () => clearTimeout(timeout);
+    const t = setTimeout(next, BUILD_PHASES[0].duration);
+    return () => clearTimeout(t);
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4">
-      <p className="text-sm font-medium text-[#44403C] mb-6">Building your tool</p>
-      <div className="flex gap-2 md:gap-3 mb-8 overflow-x-auto max-w-full px-2 pb-2">
-        {STAGES.map((stage, i) => {
-          const status = i < activeStage ? "done" : i === activeStage ? "active" : "waiting";
-          return (
-            <div
-              key={stage.name}
-              className={`
-                flex flex-col items-center text-center rounded-xl border px-3 py-3 md:px-4 md:py-4 w-[90px] md:w-[110px] flex-shrink-0 transition-all duration-300
-                ${status === "done"
-                  ? "bg-[#F7FDF9] border-[#A8D9B8]"
-                  : status === "active"
-                    ? "bg-[#FFF7ED] border-[#EA580C] shadow-[0_0_12px_rgba(234,88,12,0.12)]"
-                    : "bg-[#F9F8F6] border-[#E7E5E4]"
-                }
-              `}
-            >
-              <div className={`
-                text-xs font-semibold uppercase tracking-wider mb-2 px-2 py-0.5 rounded-full
-                ${status === "done"
-                  ? "text-[#166534] bg-[#DCFCE7]"
-                  : status === "active"
-                    ? "text-[#9A3412] bg-[#FFF7ED]"
-                    : "text-[#A8A29E] bg-transparent"
-                }
-              `}>
-                {status === "done" ? "Done" : status === "active" ? "Running" : "Ready"}
-              </div>
-              <div className="text-2xl mb-1.5">{stage.icon}</div>
-              <div className={`text-xs font-semibold mb-0.5 ${status === "waiting" ? "text-[#A8A29E]" : "text-[#1C1917]"}`}>
-                {stage.name}
-              </div>
-              <div className={`text-[11px] ${status === "waiting" ? "text-[#D6D3D1]" : "text-[#78716C]"}`}>
-                {stage.action}
-              </div>
-              {status === "done" && (
-                <div className="flex items-center gap-1 mt-1.5 text-[11px] text-[#16A34A] font-medium">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4 7L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  {stage.time}
+    <div className="flex-1 flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        {/* Live elapsed */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F4F4F5] rounded-full">
+            <div className="w-2 h-2 rounded-full bg-[#C2410C] animate-pulse" />
+            <span className="text-xs font-medium text-[#3F3F46]">Building</span>
+            <span className="text-xs font-mono text-[#A1A1AA]">{elapsed}s</span>
+          </div>
+        </div>
+
+        {/* Phase list */}
+        <div className="space-y-1">
+          {BUILD_PHASES.map((p, i) => {
+            const status = i < phase ? "done" : i === phase ? "active" : "waiting";
+            return (
+              <div
+                key={p.label}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
+                  status === "active" ? "bg-[#F4F4F5]" : ""
+                }`}
+              >
+                {/* Status indicator */}
+                <div className="mt-0.5 flex-shrink-0">
+                  {status === "done" ? (
+                    <div className="w-5 h-5 rounded-full bg-[#18181B] flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5L4 7L8 3" stroke="#FAFAFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  ) : status === "active" ? (
+                    <div className="w-5 h-5 rounded-full border-2 border-[#C2410C] flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-[#C2410C] animate-pulse" />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-[#E4E4E7]" />
+                  )}
                 </div>
-              )}
-              {status === "active" && (
-                <div className="mt-1.5">
-                  <svg className="animate-spin h-3.5 w-3.5 text-[#EA580C]" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+
+                {/* Label + detail */}
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-medium transition-colors duration-300 ${
+                    status === "done" ? "text-[#09090B]" :
+                    status === "active" ? "text-[#09090B]" :
+                    "text-[#D4D4D8]"
+                  }`}>
+                    {p.label}
+                  </div>
+                  {status === "active" && (
+                    <div className="text-xs text-[#A1A1AA] mt-0.5 animate-[fadeIn_0.2s_ease]">
+                      {p.detail}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="w-[500px] max-w-full h-1.5 bg-[#E7E5E4] rounded-full overflow-hidden">
-        <div
-          className="h-full bg-[#EA580C] rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${((activeStage + 1) / STAGES.length) * 100}%` }}
-        />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-6 h-1 bg-[#F4F4F5] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#18181B] rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${((phase + 1) / BUILD_PHASES.length) * 100}%` }}
+          />
+        </div>
       </div>
     </div>
   );

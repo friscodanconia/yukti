@@ -206,10 +206,15 @@ IMPORTANT DESIGN RULES:
 - For comparisons (X vs Y), use .vs-grid with .panel.warm and .panel.green for visual contrast.
 - Put the most important result in a .result-banner or .output.highlight.
 - Keep .output .value to one number only. No labels inside the value — use .sub for context.
-- The page background is warm gray (#F5F3EF). Cards are white. This contrast creates visual structure.
+- The page background is warm cream (#f5ede0). Cards are raised cream (#faf6ef) with glass-card borders. This creates layered warmth — NOT a flat white page. NEVER set background to white or near-white.
 
 - Use these classes. Do NOT write CSS for basics (fonts, colors, spacing). Only add <style> for custom layout needs specific to your page.
-- Colors available: accent #C2410C, text #1C1917, secondary #57534E, muted #A8A29E, bg #FAF9F7, border #E7E5E4, highlight-bg #FFF7ED
+- Colors: text #1c1917, secondary #44403c, muted #96897a, bg #f5ede0 (warm cream — NOT white), accent #c2652a (terracotta)
+- Cards use glass-card style: background #faf6ef (raised cream), semi-transparent borders
+- .output.highlight uses DARK background (#1c1917) with cream text — use for the PRIMARY result
+- .result-banner uses DARK gradient background — use for the ONE hero number
+- Slider thumbs are solid terracotta (#c2652a) with glow shadow
+- The page background is warm cream (#f5ede0). Cards are slightly lighter cream (#faf6ef). This creates layered depth.
 - Write clean, working JavaScript. No frameworks. No CDN imports.
 - All interactivity goes in a <script> tag inside the HTML string.
 - Use Intl.NumberFormat for currency/number formatting. Default to Indian formatting (en-IN, INR).

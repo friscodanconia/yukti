@@ -455,7 +455,44 @@ function cleanCode(raw: string): string {
     }
   }
 
+  // Fix nested backtick issue: if there are more than 2 backticks,
+  // the LLM used template literals inside the HTML string.
+  // Convert the code to use a different approach: replace the outer
+  // template literal with string concatenation.
+  const backtickCount = (code.match(/`/g) || []).length;
+  if (backtickCount > 2) {
+    console.warn(`[cleanCode] Found ${backtickCount} backticks — attempting fix`);
+    // Strategy: find the HTML template literal and convert inner backticks
+    // to escaped backticks or single quotes
+    code = fixNestedBackticks(code);
+  }
+
   return code;
+}
+
+function fixNestedBackticks(code: string): string {
+  // Find the main template literal: const html = `...`;
+  // Everything between the first ` after "= " and the matching closing `
+  // is the HTML string. Any backticks inside <script> tags within it are errors.
+
+  const firstBacktick = code.indexOf('`');
+  if (firstBacktick === -1) return code;
+
+  const lastBacktick = code.lastIndexOf('`');
+  if (lastBacktick === firstBacktick) return code;
+
+  // Extract the content between the outer backticks
+  const before = code.slice(0, firstBacktick);
+  const inner = code.slice(firstBacktick + 1, lastBacktick);
+  const after = code.slice(lastBacktick + 1);
+
+  // Replace any remaining backticks in the inner content with single quotes
+  // and ${...} template expressions with string concatenation
+  let fixed = inner
+    .replace(/`/g, "'")
+    .replace(/\$\{([^}]+)\}/g, "' + ($1) + '");
+
+  return before + '`' + fixed + '`' + after;
 }
 
 function generateRunId(): string {
