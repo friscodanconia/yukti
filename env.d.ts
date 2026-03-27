@@ -3,6 +3,7 @@ declare namespace Cloudflare {
     LOADER: WorkerLoader;
     OPENROUTER_API_KEY: string;
     GOOGLE_API_KEY: string;
+    GEMINI_API_KEY: string;
     TOOLS_KV: KVNamespace;
   }
 }

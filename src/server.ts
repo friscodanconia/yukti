@@ -37,7 +37,7 @@ function buildImagePrompt(query: string): string {
 async function generateGeminiImage(apiKey: string, query: string): Promise<string | null> {
   try {
     const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent",
       {
         method: "POST",
         headers: {
@@ -132,13 +132,13 @@ export default {
         // 1. Classify + generate code (+ image in parallel for delight queries)
         const tier = classifyComplexity(topic);
         const userPrompt = buildUserPrompt(topic);
-        const wantsImage = isDelightQuery(topic) && env.GOOGLE_API_KEY;
+        const wantsImage = isDelightQuery(topic) && env.GEMINI_API_KEY;
 
         const llmStart = Date.now();
         // Fire LLM and image generation in parallel
         const [llmResult, heroImage] = await Promise.all([
           callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt),
-          wantsImage ? generateGeminiImage(env.GOOGLE_API_KEY, topic) : Promise.resolve(null),
+          wantsImage ? generateGeminiImage(env.GEMINI_API_KEY, topic) : Promise.resolve(null),
         ]);
         let code = cleanCode(llmResult.text);
         timing.llmMs = Date.now() - llmStart;
