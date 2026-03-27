@@ -480,6 +480,99 @@ update();
   }
 }
 
+## Example 3: Delight Output (Recipe)
+
+For "How do I make butter chicken?":
+
+export default {
+  async fetch(request, env) {
+    let recipe = null;
+    try {
+      const res = await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s=butter%20chicken');
+      if (res.ok) {
+        const d = await res.json();
+        if (d && d.meals && d.meals.length > 0) recipe = d.meals[0];
+      }
+    } catch(e) {}
+
+    // Fallback if API fails
+    var title = recipe ? recipe.strMeal : 'Butter Chicken';
+    var instructions = recipe ? recipe.strInstructions : 'Marinate chicken in yogurt and spices for 2 hours. Grill or pan-fry until charred. Make gravy: cook onions, tomatoes, cashews in butter until soft. Blend smooth. Add cream, kasuri methi, garam masala. Simmer. Add chicken. Serve with naan.';
+    var imageUrl = recipe ? recipe.strMealThumb : '';
+
+    // Extract ingredients from API response
+    var ingredients = [];
+    if (recipe) {
+      for (var i = 1; i <= 20; i++) {
+        var ing = recipe['strIngredient' + i];
+        var measure = recipe['strMeasure' + i];
+        if (ing && ing.trim()) ingredients.push({ name: ing.trim(), measure: (measure || '').trim() });
+      }
+    } else {
+      ingredients = [
+        {name:'Chicken thighs',measure:'750g'},{name:'Yogurt',measure:'1 cup'},{name:'Butter',measure:'100g'},
+        {name:'Tomato puree',measure:'400g'},{name:'Heavy cream',measure:'1/2 cup'},{name:'Onion',measure:'2 large'},
+        {name:'Ginger-garlic paste',measure:'2 tbsp'},{name:'Garam masala',measure:'2 tsp'},{name:'Kasuri methi',measure:'1 tbsp'},
+        {name:'Red chili powder',measure:'1 tsp'},{name:'Turmeric',measure:'1/2 tsp'},{name:'Sugar',measure:'1 tsp'}
+      ];
+    }
+
+    // Split instructions into steps
+    var steps = instructions.split(/\\.\\s+|\\.\\n|\\n/).filter(function(s) { return s.trim().length > 10; });
+
+    var ingHtml = '';
+    for (var j = 0; j < ingredients.length; j++) {
+      var ing2 = ingredients[j];
+      ingHtml += '<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(191,176,154,0.12)">' +
+        '<span style="font-weight:500;color:#1c1917">' + ing2.name + '</span>' +
+        '<span style="color:#96897a;font-variant-numeric:tabular-nums">' + ing2.measure + '</span></div>';
+    }
+
+    var stepsHtml = '';
+    for (var k = 0; k < steps.length; k++) {
+      stepsHtml += '<div style="display:flex;gap:0.875rem;margin-bottom:1.25rem">' +
+        '<div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#c2652a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700">' + (k+1) + '</div>' +
+        '<p style="flex:1;color:#44403c;font-size:0.875rem;line-height:1.7;margin:0">' + steps[k].trim() + '</p></div>';
+    }
+
+    var heroSvg = '<svg viewBox="0 0 740 200" style="width:100%;border-radius:16px;margin-bottom:1.5rem"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c2652a" stop-opacity="0.15"/><stop offset="100%" stop-color="#f5ede0" stop-opacity="0.3"/></linearGradient></defs><rect width="740" height="200" fill="url(#rg)" rx="16"/><text x="370" y="90" text-anchor="middle" font-family="Cormorant Garamond,Georgia,serif" font-size="42" font-weight="600" fill="#1c1917" font-style="italic">' + title + '</text><text x="370" y="125" text-anchor="middle" font-family="Outfit,sans-serif" font-size="14" fill="#96897a">Classic North Indian Curry</text>' +
+      '<circle cx="180" cy="160" r="4" fill="#c2652a" opacity="0.3"/><circle cx="370" cy="170" r="3" fill="#c2652a" opacity="0.2"/><circle cx="560" cy="155" r="5" fill="#c2652a" opacity="0.25"/></svg>';
+
+    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + ' — Recipe</title></head><body>' +
+      heroSvg +
+      (imageUrl ? '<div style="text-align:center;margin-bottom:1.5rem"><img src="' + imageUrl + '" alt="' + title + '" style="width:100%;max-width:400px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12)"></div>' : '') +
+      '<div class="card"><div class="card-header">Ingredients</div>' +
+        '<div class="control"><label>Servings <span class="val" id="srv-val">4</span></label>' +
+        '<input type="range" id="srv" min="1" max="8" value="4" oninput="scale()"></div>' +
+        '<div id="ing-list">' + ingHtml + '</div></div>' +
+      '<div class="section"><h2>Method</h2><div id="steps">' + stepsHtml + '</div></div>' +
+      '<div class="sources"><p><strong>Source:</strong> TheMealDB Recipe API. Data as of ' + new Date().toLocaleDateString() + '.</p>' +
+      '<p><strong>Note:</strong> Ingredient quantities scale with serving size. Cooking times remain constant.</p></div>' +
+      '<script>' +
+      'var baseIngredients = ' + JSON.stringify(ingredients) + ';' +
+      'function scale() {' +
+      '  var s = document.getElementById("srv").value;' +
+      '  document.getElementById("srv-val").textContent = s;' +
+      '  var ratio = s / 4;' +
+      '  var html = "";' +
+      '  for (var i = 0; i < baseIngredients.length; i++) {' +
+      '    var ing = baseIngredients[i];' +
+      '    var m = ing.measure;' +
+      '    var scaled = m.replace(/([0-9.]+)/g, function(match) { return Math.round(parseFloat(match) * ratio * 10) / 10; });' +
+      '    html += \'<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(191,176,154,0.12)">\' +' +
+      '      \'<span style="font-weight:500;color:#1c1917">\' + ing.name + \'</span>\' +' +
+      '      \'<span style="color:#96897a;font-variant-numeric:tabular-nums">\' + scaled + \'</span></div>\';' +
+      '  }' +
+      '  document.getElementById("ing-list").innerHTML = html;' +
+      '}' +
+      '</script></body></html>';
+
+    return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  }
+}
+
+Key delight patterns used: SVG hero banner with decorative typography, real API image, numbered step cards, ingredient list with serving scaler, warm accent colors throughout. The output feels editorial, not functional.
+
 Remember: return ONLY the JavaScript module. No markdown. No explanation.`;
 
 export function buildUserPrompt(topic: string, fetchedData?: string): string {

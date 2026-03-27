@@ -47,11 +47,20 @@ export function classifyComplexity(query: string): ModelTier {
     "current rate", "real data", "latest", "today",
   ];
 
+  // Delight queries need Sonnet — Haiku produces minimal, ugly output for these
+  const delightSignals = [
+    "how do i make", "how to make", "recipe", "cook",
+    "explain", "what is", "how does", "tell me about",
+    "best exercises", "workout", "health", "nutrition",
+    "history of", "guide to", "overview",
+  ];
+
   const hasComplex = complexSignals.some(s => lower.includes(s));
   const hasMedium = mediumSignals.some(s => lower.includes(s));
+  const hasDelight = delightSignals.some(s => lower.includes(s));
 
   if (hasComplex || wordCount > 30) return "powerful";
-  if (hasMedium || wordCount > 15) return "standard";
+  if (hasMedium || hasDelight || wordCount > 15) return "standard";
   return "fast";
 }
 
