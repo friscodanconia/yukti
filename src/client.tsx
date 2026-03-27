@@ -79,20 +79,27 @@ function removeTool(runId: string) {
 
 const BUILD_PHASES = [
   { label: "Understanding your question", detail: "Analyzing intent and complexity", duration: 2000 },
-  { label: "Selecting data sources", detail: "Choosing the right APIs", duration: 2500 },
-  { label: "Writing the code", detail: "Generating a custom Worker module", duration: 15000 },
-  { label: "Securing the sandbox", detail: "Setting capabilities and network policy", duration: 1500 },
-  { label: "Executing in isolate", detail: "Running in Cloudflare V8 sandbox", duration: 2000 },
+  { label: "Choosing from 40+ live APIs", detail: "Matching your query to the best APIs", duration: 2500 },
+  { label: "Crafting your interactive tool", detail: "Generating a custom Worker module", duration: 15000 },
+  { label: "Setting up isolated V8 environment", detail: "Blocking private networks, setting permissions", duration: 1500 },
+  { label: "Running and testing the tool", detail: "Fetching live data and building the page", duration: 2000 },
 ];
 
-function BuildingPipeline() {
+function BuildingPipeline({ onBackground }: { onBackground?: () => void }) {
   const [phase, setPhase] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [showNotifyBtn, setShowNotifyBtn] = useState(false);
 
   useEffect(() => {
     const start = Date.now();
     const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Show "notify me" button after 15 seconds
+  useEffect(() => {
+    const t = setTimeout(() => setShowNotifyBtn(true), 15000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -108,16 +115,23 @@ function BuildingPipeline() {
     return () => clearTimeout(t);
   }, []);
 
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `${s}s`;
+  };
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        {/* Live elapsed */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F4F4F5] rounded-full">
-            <div className="w-2 h-2 rounded-full bg-[#C2410C] animate-pulse" />
-            <span className="text-xs font-medium text-[#3F3F46]">Building</span>
-            <span className="text-xs font-mono text-[#A1A1AA]">{elapsed}s</span>
+        {/* Live elapsed — prominent timer */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-[#FFF7ED] border border-[#FDBA74] rounded-2xl">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#C2410C] animate-pulse" />
+            <span className="text-sm font-semibold text-[#1C1917]">Building</span>
+            <span className="text-2xl font-mono font-bold text-[#C2410C] tabular-nums" style={{ minWidth: "3ch" }}>{formatTime(elapsed)}</span>
           </div>
+          <div className="text-xs text-[#A8A29E] mt-2.5">Usually takes 20-40 seconds</div>
         </div>
 
         {/* Phase list */}
@@ -128,13 +142,14 @@ function BuildingPipeline() {
               <div
                 key={p.label}
                 className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
-                  status === "active" ? "bg-[#F4F4F5]" : ""
+                  status === "active" ? "bg-[#FFF7ED] border border-[#FDBA74]/40" : "border border-transparent"
                 }`}
+                style={status === "active" ? { animation: "subtlePulse 2s ease-in-out infinite" } : undefined}
               >
                 {/* Status indicator */}
                 <div className="mt-0.5 flex-shrink-0">
                   {status === "done" ? (
-                    <div className="w-5 h-5 rounded-full bg-[#18181B] flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-[#166534] flex items-center justify-center">
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M2 5L4 7L8 3" stroke="#FAFAFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -151,15 +166,24 @@ function BuildingPipeline() {
                 {/* Label + detail */}
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-medium transition-colors duration-300 ${
-                    status === "done" ? "text-[#09090B]" :
-                    status === "active" ? "text-[#09090B]" :
+                    status === "done" ? "text-[#166534]" :
+                    status === "active" ? "text-[#1C1917]" :
                     "text-[#D4D4D8]"
                   }`}>
-                    {p.label}
+                    {status === "done" ? (
+                      <span className="flex items-center gap-1.5">
+                        {p.label}
+                      </span>
+                    ) : p.label}
                   </div>
                   {status === "active" && (
-                    <div className="text-xs text-[#A1A1AA] mt-0.5 animate-[fadeIn_0.2s_ease]">
+                    <div className="text-xs text-[#A8A29E] mt-0.5 animate-[fadeIn_0.3s_ease]">
                       {p.detail}
+                    </div>
+                  )}
+                  {status === "done" && (
+                    <div className="text-xs text-[#86EFAC] mt-0.5 animate-[fadeIn_0.2s_ease]">
+                      Done
                     </div>
                   )}
                 </div>
@@ -169,13 +193,41 @@ function BuildingPipeline() {
         </div>
 
         {/* Progress bar */}
-        <div className="mt-6 h-1 bg-[#F4F4F5] rounded-full overflow-hidden">
+        <div className="mt-6 h-1.5 bg-[#F4F4F5] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#18181B] rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${((phase + 1) / BUILD_PHASES.length) * 100}%` }}
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: `${((phase + 1) / BUILD_PHASES.length) * 100}%`,
+              background: "linear-gradient(90deg, #C2410C, #EA580C)",
+            }}
           />
         </div>
+
+        {/* Notify me button — appears after 15s */}
+        {showNotifyBtn && onBackground && (
+          <div className="mt-8 text-center animate-[fadeIn_0.5s_ease]">
+            <button
+              type="button"
+              onClick={onBackground}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#78716C] hover:text-[#C2410C] border border-[#E5E3DF] hover:border-[#C2410C] rounded-lg transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
+              </svg>
+              Take me back — notify when ready
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Inline styles for custom animation */}
+      <style>{`
+        @keyframes subtlePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.85; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -209,7 +261,23 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [myTools, setMyTools] = useState<SavedTool[]>(getSavedTools);
+  const [backgrounded, setBackgrounded] = useState(false);
+  const [toolReady, setToolReady] = useState(false);
+  const backgroundedRef = useRef(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => { backgroundedRef.current = backgrounded; }, [backgrounded]);
+
+  const handleBackground = () => {
+    setBackgrounded(true);
+    backgroundedRef.current = true;
+  };
+
+  const handleViewReady = () => {
+    setBackgrounded(false);
+    setToolReady(false);
+  };
 
   const handleSave = () => {
     if (!runId || !toolUrl) return;
@@ -299,6 +367,8 @@ function App() {
     setSaved(false);
     setRefineInput("");
     setRefining(false);
+    setBackgrounded(false);
+    setToolReady(false);
 
     try {
       const res = await fetch("/api/explain", {
@@ -335,6 +405,9 @@ function App() {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setLoading(false);
+      if (backgroundedRef.current) {
+        setToolReady(true);
+      }
     }
   }, []);
 
@@ -391,12 +464,33 @@ function App() {
   };
 
   const hasResult = !!(html || loading || error || runId);
+  const showHome = !hasResult || backgrounded;
   const showClarification = !!(clarifyQuestions && clarifyQuestions.length > 0);
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
+      {/* Tool ready notification banner */}
+      {toolReady && backgrounded && (
+        <div className="sticky top-0 z-[100] animate-[fadeIn_0.3s_ease]">
+          <div className="bg-[#166534] text-white px-4 py-3 flex items-center justify-center gap-3">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" stroke="white" strokeWidth="1.5"/>
+              <path d="M5 8L7 10L11 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="text-sm font-medium">Your tool is ready</span>
+            <button
+              type="button"
+              onClick={handleViewReady}
+              className="ml-2 px-4 py-1 text-sm font-semibold bg-white text-[#166534] rounded-lg hover:bg-[#F0FDF4] transition-all"
+            >
+              View
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Start screen — centered, no split */}
-      {!hasResult && (
+      {showHome && (
         <>
           <div className="max-w-2xl mx-auto px-5 pt-12 md:pt-20 pb-8">
             <div className="text-center mb-10">
@@ -598,7 +692,7 @@ function App() {
       )}
 
       {/* Split screen — query left, result right (desktop) */}
-      {hasResult && (
+      {hasResult && !backgrounded && (
         <div className="h-screen flex flex-col md:flex-row">
           {/* Left panel — query (hidden on mobile) */}
           <div className="hidden md:flex md:w-[380px] md:min-w-[380px] bg-[#F0EDE8] border-r border-[#E5E3DF] flex-col h-screen">
@@ -740,7 +834,7 @@ function App() {
 
           {/* Right panel — output */}
           <div className="flex-1 bg-white flex flex-col min-h-[50vh] md:h-screen">
-            {loading && !refining && <BuildingPipeline />}
+            {loading && !refining && <BuildingPipeline onBackground={handleBackground} />}
             {refining && (
               <div className="flex-1 flex items-center justify-center">
                 <div className="flex items-center gap-3">

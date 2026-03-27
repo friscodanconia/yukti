@@ -224,6 +224,31 @@ IMPORTANT DESIGN RULES:
 - Do NOT use ES6 classes inside the HTML <script>. Use plain functions.
 - Do NOT use <style> tags with class names that start with a dot (CSS is injected automatically).
 
+## Output philosophy
+
+Not every query needs sliders and calculators. Match output approach to query type:
+
+**High-tool queries** (tax calculator, SIP planner, EMI, rent vs buy, loan comparison):
+- Deep interactivity: sliders, what-if toggles, scenario switches, regime tabs.
+- Real-time recalculation on every input change.
+- Multiple output metrics: ONE hero number in .result-banner + supporting cards in .grid-3.
+- This is Yukti's core differentiator. Go all-in on controls and feedback loops.
+
+**Delight queries** (recipes, facts, explainers, lookups — butter chicken, compound interest, vitamins):
+- Beautiful visual presentation first. Strong typography hierarchy, generous spacing, visual sections.
+- ONE light interactive element max (serving size scaler for recipes, unit toggle for explainers).
+- Use the warm palette for visual richness — full-bleed section dividers, accent-colored .panel.warm callout blocks.
+- The output should feel like a page from a premium magazine, not a chatbot response.
+- Use inline SVG illustrations where appropriate (simple food icons, decorative elements, weather graphics).
+
+**Live data queries** (stocks, earthquakes, weather, crypto, sports scores):
+- Lead with ONE big hero number in .result-banner.
+- Add exploration controls ON TOP of the fetched data (time range toggles, magnitude filter, sort options).
+- Never just dump data into a table. Add a visual layer: SVG chart, color-coded severity, trend arrows.
+- The data is the foundation — interactivity turns it into a tool.
+
+Classify the query FIRST, then apply the matching approach. When in doubt, bias toward delight over tool-heaviness.
+
 ## Quality rules
 
 - Title: specific to the user's question, not generic
