@@ -17,6 +17,72 @@ import { validateWorkerCode, injectBaseCSS } from "./toolkit/validate";
 import { BASE_CSS } from "./toolkit/base-css";
 import { generateFetchGuard } from "./toolkit/outbound";
 
+// ── Gemini Image Generation ─────────────────────────────
+const DELIGHT_SIGNALS = [
+  "how do i make", "how to make", "recipe", "cook", "bake",
+  "explain", "what is", "how does", "tell me about",
+  "history of", "guide to", "overview", "story of",
+  "best exercises", "workout", "yoga",
+];
+
+function isDelightQuery(query: string): boolean {
+  const lower = query.toLowerCase();
+  return DELIGHT_SIGNALS.some(s => lower.includes(s));
+}
+
+function buildImagePrompt(query: string): string {
+  return `Watercolor editorial illustration on a warm cream background (#f5ede0). Soft, flowing watercolor technique with visible brush strokes and gentle color bleeds. No hard outlines. Warm palette: saffron, terracotta, turmeric gold, sage green, cream. The illustration should feel like it belongs in a premium food or lifestyle magazine. White/cream margins around the edges. No text, no labels, no UI elements, no words. Subject: ${query}. Wide aspect ratio, horizontal composition.`;
+}
+
+async function generateGeminiImage(apiKey: string, query: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildImagePrompt(query) }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      console.warn("[Gemini Image] API error:", res.status);
+      return null;
+    }
+
+    const data = await res.json() as {
+      candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[];
+    };
+
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (!parts) return null;
+
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn("[Gemini Image] Error:", err);
+    return null; // fail open
+  }
+}
+
+function injectHeroImage(html: string, imageDataUri: string): string {
+  // Inject after <body> tag as a full-width hero image
+  const heroHtml = `<div style="margin:-2.5rem -1.75rem 1.5rem;text-align:center"><img src="${imageDataUri}" alt="" style="width:100%;max-height:280px;object-fit:cover;border-radius:0 0 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,0.08)"></div>`;
+  return html.replace(/<body([^>]*)>/i, `<body$1>${heroHtml}`);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -63,14 +129,20 @@ export default {
         const timing: Record<string, number> = {};
         const totalStart = Date.now();
 
-        // 1. Classify + generate code
+        // 1. Classify + generate code (+ image in parallel for delight queries)
         const tier = classifyComplexity(topic);
         const userPrompt = buildUserPrompt(topic);
+        const wantsImage = isDelightQuery(topic) && env.GOOGLE_API_KEY;
 
         const llmStart = Date.now();
-        let llmResult = await callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt);
+        // Fire LLM and image generation in parallel
+        const [llmResult, heroImage] = await Promise.all([
+          callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt),
+          wantsImage ? generateGeminiImage(env.GOOGLE_API_KEY, topic) : Promise.resolve(null),
+        ]);
         let code = cleanCode(llmResult.text);
         timing.llmMs = Date.now() - llmStart;
+        if (heroImage) console.log(`[${runId}] Gemini image generated (${Math.round(heroImage.length / 1024)}KB)`);
 
         // 2. Validate
         let validation = validateWorkerCode(code);
@@ -122,8 +194,11 @@ export default {
         }
         timing.execMs = Date.now() - execStart;
 
-        // 4. Inject base CSS
+        // 4. Inject base CSS + hero image
         html = injectBaseCSS(html, BASE_CSS);
+        if (heroImage) {
+          html = injectHeroImage(html, heroImage);
+        }
         timing.totalMs = Date.now() - totalStart;
 
         // 5. Save to KV for sharing
