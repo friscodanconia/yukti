@@ -97,7 +97,7 @@ export default {
           retried = true;
           console.log(`[${runId}] First attempt failed, retrying:`, loadError);
           const errMsg = loadError instanceof Error ? loadError.message : String(loadError);
-          const retryPrompt = `${userPrompt}\n\nYour previous code failed with: ${errMsg}\n\nCommon causes:\n- Using backticks/template literals inside the HTML string (use '+' concatenation instead)\n- Using ES6 classes inside <script> (use plain functions)\n- Syntax errors in nested strings\n\nFix the error and return the corrected module.`;
+          const retryPrompt = `${userPrompt}\n\nYour previous code failed with: ${errMsg}\n\nCommon causes:\n- Using backticks/template literals inside the HTML string (use '+' concatenation instead)\n- Using ES6 classes inside <script> (use plain functions)\n- Syntax errors in nested strings\n- Accessing properties on null API responses (e.g., data.meals[0] when data.meals is null). ALWAYS check: if (data && data.meals && data.meals.length > 0) before accessing.\n- Not handling API fetch failures — ALWAYS wrap fetch in try/catch with a hardcoded fallback.\n\nFix the error and return the corrected module.`;
 
           const retryStart = Date.now();
           const retryResult = await callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, retryPrompt);

@@ -183,6 +183,7 @@ export default {
 IMPORTANT:
 - Use async fetch() handler when making API calls.
 - ALWAYS set a hardcoded fallback value BEFORE the try/catch. If the API fails, the page should still render with approximate data and a note saying "live data unavailable".
+- ALWAYS null-check API responses before accessing nested properties. Many APIs return null for empty results (e.g., TheMealDB returns { meals: null }). Use: if (data && data.meals && data.meals.length > 0) { ... } else { use fallback }. This is the #2 cause of broken tools after backtick nesting.
 - ALWAYS add { headers: { 'User-Agent': 'Mozilla/5.0' } } to Yahoo Finance requests.
 - NEVER show an empty page or just an error message. Always render something useful.
 - A base CSS stylesheet is automatically injected. You get these classes for free:
