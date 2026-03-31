@@ -134,15 +134,14 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        {/* Live elapsed — prominent timer */}
+      <div className="forge">
+        {/* Timer — mechanical feel */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-[#FFF7ED] border border-[#FDBA74] rounded-2xl">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#C2410C] animate-pulse" />
-            <span className="text-sm font-semibold text-[#1C1917]">Building</span>
-            <span className="text-2xl font-mono font-bold text-[#C2410C] tabular-nums" style={{ minWidth: "3ch" }}>{formatTime(elapsed)}</span>
+          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl" style={{ background: 'var(--color-forge, #1C1917)', border: '1px solid rgba(194,65,12,0.3)' }}>
+            <div className="w-2.5 h-2.5 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--color-ember)' }}>Forging</span>
+            <span className="forge-timer" style={{ minWidth: "3ch" }}>{formatTime(elapsed)}</span>
           </div>
-          <div className="text-xs text-[#A8A29E] mt-2.5">Usually takes 20-40 seconds</div>
         </div>
 
         {/* Phase list */}
@@ -153,49 +152,37 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
             return (
               <div
                 key={stageKey + i}
-                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
-                  status === "active" ? "bg-[#FFF7ED] border border-[#FDBA74]/40" : "border border-transparent"
-                }`}
-                style={status === "active" ? { animation: "subtlePulse 2s ease-in-out infinite" } : undefined}
+                className={`forge-step forge-step--${status}`}
               >
                 {/* Status indicator */}
                 <div className="mt-0.5 flex-shrink-0">
                   {status === "done" ? (
-                    <div className="w-5 h-5 rounded-full bg-[#166534] flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-ember)' }}>
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M2 5L4 7L8 3" stroke="#FAFAFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
                   ) : status === "active" ? (
-                    <div className="w-5 h-5 rounded-full border-2 border-[#C2410C] flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-[#C2410C] animate-pulse" />
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--color-ember)' }}>
+                      <div className="w-2 h-2 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-[#E4E4E7]" />
+                    <div className="w-5 h-5 rounded-full border-2 border-[#3A3530]" />
                   )}
                 </div>
 
                 {/* Label + detail */}
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-medium transition-colors duration-300 ${
-                    status === "done" ? "text-[#166534]" :
-                    status === "active" ? "text-[#1C1917]" :
-                    "text-[#D4D4D8]"
+                    status === "done" ? "text-[var(--color-ember)]" :
+                    status === "active" ? "text-[var(--color-ink)]" :
+                    "text-[#57534E]"
                   }`}>
-                    {status === "done" ? (
-                      <span className="flex items-center gap-1.5">
-                        {info.label}
-                      </span>
-                    ) : info.label}
+                    {info.label}
                   </div>
                   {status === "active" && (
-                    <div className="text-xs text-[#A8A29E] mt-0.5 animate-[fadeIn_0.3s_ease]">
+                    <div className="text-xs text-[var(--color-ink-muted)] mt-0.5 animate-[fadeIn_0.3s_ease]">
                       {info.detail}
-                    </div>
-                  )}
-                  {status === "done" && (
-                    <div className="text-xs text-[#86EFAC] mt-0.5 animate-[fadeIn_0.2s_ease]">
-                      Done
                     </div>
                   )}
                 </div>
@@ -205,12 +192,13 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
         </div>
 
         {/* Progress bar */}
-        <div className="mt-6 h-1.5 bg-[#F4F4F5] rounded-full overflow-hidden">
+        <div className="mt-6 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(194,65,12,0.1)' }}>
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
               width: `${((Math.max(0, currentIdx) + 1) / displayStages.length) * 100}%`,
-              background: "linear-gradient(90deg, #C2410C, #EA580C)",
+              background: "linear-gradient(90deg, var(--color-ember), var(--color-ember-deep))",
+              boxShadow: '0 0 12px var(--color-ember-glow)',
             }}
           />
         </div>
@@ -221,7 +209,7 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
             <button
               type="button"
               onClick={onBackground}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#78716C] hover:text-[#C2410C] border border-[#E5E3DF] hover:border-[#C2410C] rounded-lg transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] border border-[#3A3530] hover:border-[var(--color-ember)] rounded-lg transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 1v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -232,14 +220,6 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
           </div>
         )}
       </div>
-
-      {/* Inline styles for custom animation */}
-      <style>{`
-        @keyframes subtlePulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.85; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -631,37 +611,43 @@ function App() {
       {showHome && (
         <>
           <div className="max-w-2xl mx-auto px-5 pt-12 md:pt-20 pb-8">
-            <div className="text-center mb-10">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1C1917] mb-1" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.03em" }}>
-                Yukti
-              </h1>
-              <p className="text-xs uppercase tracking-[0.15em] text-[#A8A29E] font-semibold mb-8">
-                Interactive tools, built on the fly
-              </p>
-              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3 text-[#1C1917]">
-                What if every question had<br />an answer beyond text?
+            <div className="text-center mb-14">
+              {/* The mark */}
+              <div className="mb-8">
+                <h1 className="display text-6xl md:text-8xl" style={{ fontFamily: "var(--font-display)" }}>
+                  <em>Yukti</em>
+                </h1>
+              </div>
+
+              {/* The proposition */}
+              <h2 className="text-xl md:text-2xl font-medium text-[var(--color-ink-secondary)] max-w-md mx-auto leading-relaxed">
+                Ask anything. Get a tool<br/>that answers back.
               </h2>
-              <p className="text-base text-[#78716C]">
-                Type anything. We'll build it.
-              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mb-12">
-              <textarea
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
-                placeholder="How much tax do I pay on a 12L salary?"
-                rows={2}
-                className="w-full px-5 py-4 text-base bg-white border-[1.5px] border-[#D6D3D1] rounded-xl outline-none transition-all placeholder:text-[#A8A29E] focus:border-[#C2410C] focus:shadow-[0_0_0_3px_rgba(194,65,12,0.08)] resize-none"
-                autoFocus
-              />
+            <form onSubmit={handleSubmit} className="mb-16">
+              <div className="relative">
+                <textarea
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+                  placeholder="How much tax on a 12 lakh salary?"
+                  rows={2}
+                  className="query-input"
+                  autoFocus
+                />
+              </div>
               <button
                 type="submit"
                 disabled={!query.trim()}
-                className="mt-3 w-full py-3 bg-[#C2410C] text-white text-sm font-semibold rounded-xl hover:bg-[#9A3412] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="mt-4 w-full py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed"
+                style={{
+                  background: query.trim() ? 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))' : '#E5E3DF',
+                  color: query.trim() ? 'white' : '#A8A29E',
+                  boxShadow: query.trim() ? '0 4px 20px var(--color-ember-glow), 0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
               >
-                Go
+                Build
               </button>
             </form>
 
@@ -672,7 +658,7 @@ function App() {
 
             {showClarification && (
               <div className="mb-8 bg-white border-[1.5px] border-[#E7E5E4] rounded-xl p-5">
-                <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-[#A8A29E] mb-4">
+                <div className="mono-label mb-4">
                   Quick question{clarifyQuestions!.length > 1 ? "s" : ""} before we build
                 </div>
                 <div className="flex flex-col gap-5">
@@ -728,7 +714,7 @@ function App() {
                     disabled={Object.keys(clarifyAnswers).length === 0}
                     className="px-5 py-2 bg-[#C2410C] text-white text-sm font-semibold rounded-lg hover:bg-[#9A3412] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
-                    Build it
+                    Build
                   </button>
                   <button
                     type="button"
@@ -741,28 +727,19 @@ function App() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {EXAMPLE_CATEGORIES.map((cat) => (
-                <div
-                  key={cat.label}
-                  className="rounded-xl p-4 transition-shadow hover:shadow-md"
-                  style={{ background: cat.bg, border: `1.5px solid ${cat.border}` }}
-                >
-                  <div
-                    className="text-[11px] uppercase tracking-[0.08em] font-bold mb-3"
-                    style={{ color: cat.color }}
-                  >
+                <div key={cat.label} className="example-card group" data-category={cat.label.toLowerCase().replace(/\s.*/, "")}>
+                  <div className="mono-label mb-4" style={{ color: cat.color }}>
                     {cat.label}
                   </div>
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-3">
                     {cat.queries.map((q) => (
                       <button
                         type="button"
                         key={q}
                         onClick={() => { setQuery(q); submitQuery(q); }}
-                        className="text-left text-[13px] font-medium text-[#1C1917] leading-snug transition-colors"
-                        onMouseEnter={(e) => (e.currentTarget.style.color = cat.color)}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#1C1917")}
+                        className="text-left text-[13px] font-medium text-[var(--color-ink)] leading-snug transition-all group-hover:text-[var(--color-ink-secondary)] hover:!text-[var(--color-ember)] hover:translate-x-1"
                       >
                         {q}
                       </button>
@@ -775,20 +752,21 @@ function App() {
             {/* My Tools */}
             {myTools.length > 0 && (
               <div className="mt-10">
-                <div className="text-[11px] uppercase tracking-[0.08em] font-bold text-[#A8A29E] mb-3">My Tools</div>
+                <div className="mono-label mb-3">My Tools</div>
                 <div className="flex flex-col gap-2">
                   {myTools.map((tool) => (
                     <div
                       key={tool.runId}
-                      className="flex items-center gap-3 bg-white border-[1.5px] border-[#E7E5E4] rounded-lg px-4 py-3 hover:border-[#C2410C] transition-all group"
+                      className="flex items-center gap-3 bg-white border-[1.5px] border-[#E7E5E4] rounded-lg px-4 py-3 hover:border-[var(--color-ember)] hover:shadow-[0_0_12px_var(--color-ember-glow)] transition-all group"
+                      style={{ borderLeft: '3px solid var(--color-ember)' }}
                     >
                       <button
                         type="button"
                         onClick={() => handleLoadTool(tool)}
                         className="flex-1 text-left"
                       >
-                        <div className="text-sm font-medium text-[#1C1917] leading-snug">{tool.query}</div>
-                        <div className="text-[11px] text-[#A8A29E] mt-0.5">
+                        <div className="text-sm font-semibold text-[var(--color-ink)] leading-snug">{tool.query}</div>
+                        <div className="text-[11px] text-[var(--color-ink-muted)] mt-0.5">
                           {new Date(tool.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                           {" · "}
                           {tool.model.split("/").pop()}
@@ -797,7 +775,7 @@ function App() {
                       <button
                         type="button"
                         onClick={() => { setQuery(tool.query); generate(tool.query); }}
-                        className="text-[#A8A29E] hover:text-[#C2410C] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"
                         title="Regenerate with same query"
                       >
                         Fork
@@ -808,10 +786,10 @@ function App() {
                           navigator.clipboard.writeText(window.location.origin + tool.toolUrl);
                           const btn = e.currentTarget;
                           btn.textContent = "\u2713 Copied!";
-                          btn.className = "text-[#166534] bg-[#F0FDF4] rounded px-1 transition-colors text-xs";
-                          setTimeout(() => { btn.textContent = "Share"; btn.className = "text-[#A8A29E] hover:text-[#C2410C] transition-colors text-xs opacity-0 group-hover:opacity-100"; }, 2000);
+                          btn.className = "text-[var(--color-ember)] bg-[#FFF7ED] rounded px-1 transition-colors text-xs";
+                          setTimeout(() => { btn.textContent = "Share"; btn.className = "text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"; }, 2000);
                         }}
-                        className="text-[#A8A29E] hover:text-[#C2410C] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"
                         title="Copy share link"
                       >
                         Share
@@ -819,7 +797,7 @@ function App() {
                       <button
                         type="button"
                         onClick={() => handleRemoveTool(tool.runId)}
-                        className="text-[#A8A29E] hover:text-[#DC2626] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[#DC2626] transition-colors text-xs opacity-0 group-hover:opacity-100"
                         title="Remove"
                       >
                         Remove
@@ -837,14 +815,13 @@ function App() {
       {hasResult && !backgrounded && (
         <div className="h-screen flex flex-col md:flex-row">
           {/* Left panel — query (hidden on mobile) */}
-          <div className="hidden md:flex md:w-[380px] md:min-w-[380px] bg-[#F0EDE8] border-r border-[#E5E3DF] flex-col h-screen">
+          <div className="sidebar hidden md:flex md:w-[380px] md:min-w-[380px] flex-col h-screen">
             <div className="px-5 py-5 border-b border-[#E5E3DF] text-center">
               <h1
                 onClick={resetToHome}
-                className="text-2xl font-bold tracking-tight text-[#1C1917] cursor-pointer hover:text-[#C2410C] transition-colors"
-                style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.03em" }}
-              >Yukti</h1>
-              <p className="text-[10px] uppercase tracking-[0.12em] text-[#A8A29E] font-semibold mt-0.5">Interactive tools, built on the fly</p>
+                className="display text-3xl cursor-pointer hover:text-[var(--color-ember)] transition-colors"
+                style={{ fontFamily: "var(--font-display)" }}
+              ><em>Yukti</em></h1>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5">
@@ -863,14 +840,14 @@ function App() {
                   disabled={loading || !query.trim()}
                   className="mt-2 w-full py-2.5 bg-[#C85A1A] text-white text-sm font-medium rounded-lg hover:bg-[#A5491A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                  {loading ? "Building..." : "Go"}
+                  {loading ? "Forging..." : "Build"}
                 </button>
               </form>
 
               {/* Saved tools in sidebar */}
               {myTools.length > 0 && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.08em] font-bold text-[#A8A29E] mb-2">Recent tools</div>
+                  <div className="mono-label mb-2">Recent tools</div>
                   <div className="flex flex-col gap-1.5">
                     {myTools.slice(0, 8).map((tool) => (
                       <button
@@ -947,7 +924,7 @@ function App() {
                       <div className="flex justify-between text-[#D97706]"><span>Retry (code fix)</span><span>{(meta.timing.retryLlmMs / 1000).toFixed(1)}s</span></div>
                     )}
                     <div className="flex justify-between font-medium text-[#57534E]"><span>Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
-                    {runId && <div className="mt-1 text-[10px] font-mono text-[#A8A29E]">Run: {runId}</div>}
+                    {runId && <div className="mt-1 text-[10px] font-mono text-[var(--color-ink-muted)]">Run: {runId}</div>}
                   </div>
                 )}
               </div>
@@ -961,7 +938,7 @@ function App() {
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
               <div className="flex-1 text-center">
-                <span className="text-lg font-bold tracking-tight text-[#1C1917]" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.03em" }}>Yukti</span>
+                <span className="display text-lg" style={{ fontFamily: "var(--font-display)" }}><em>Yukti</em></span>
               </div>
               <div className="w-6" />
             </div>
@@ -1024,7 +1001,7 @@ function App() {
               </div>
             )}
             {html && !refining && (
-              <>
+              <div className="tool-reveal">
                 <div className="tool-stage-wrapper">
                   <div className="tool-stage">
                     <div className="tool-stage__chrome">
@@ -1090,7 +1067,7 @@ function App() {
                         </button>
                       </div>
                       {meta?.granted && meta.granted.length > 0 && (
-                        <div className="hidden md:flex items-center gap-2 text-xs text-[#A8A29E]">
+                        <div className="hidden md:flex items-center gap-2 text-xs text-[var(--color-ink-muted)]">
                           {meta.granted.map(cap => (
                             <span key={cap} className="px-2 py-0.5 bg-white rounded text-[11px] font-medium">{cap}</span>
                           ))}
@@ -1111,7 +1088,7 @@ function App() {
                               className={`px-3 py-1 text-[11px] font-medium rounded-full transition-all ${
                                 inspectorTab === tab
                                   ? "bg-[#44403C] text-[#FAFAF8]"
-                                  : "text-[#78716C] hover:text-[#A8A29E]"
+                                  : "text-[#78716C] hover:text-[var(--color-ink-muted)]"
                               }`}
                             >
                               {tab === "meta" ? "Meta" : tab === "output" ? "Output" : tab === "code" ? "Code" : "Capabilities"}
@@ -1122,28 +1099,28 @@ function App() {
                         {/* Tab: Meta */}
                         {inspectorTab === "meta" && (
                           <div className="px-4 py-3 text-xs space-y-1.5">
-                            <div className="flex justify-between"><span className="text-[#A8A29E]">Run ID</span><span className="font-mono">{runId}</span></div>
-                            <div className="flex justify-between"><span className="text-[#A8A29E]">Model</span><span>{meta?.model?.split("/").pop()}</span></div>
+                            <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Run ID</span><span className="font-mono">{runId}</span></div>
+                            <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Model</span><span>{meta?.model?.split("/").pop()}</span></div>
                             {meta?.tier && (
-                              <div className="flex justify-between"><span className="text-[#A8A29E]">Tier</span><span className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-medium">{meta.tier}</span></div>
+                              <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Tier</span><span className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-medium">{meta.tier}</span></div>
                             )}
                             {meta?.queryType && (
-                              <div className="flex justify-between"><span className="text-[#A8A29E]">Query Type</span><span className="px-1.5 py-0.5 bg-[#3B2F2F] rounded text-[10px] font-medium text-[#FBBF24]">{meta.queryType}</span></div>
+                              <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Query Type</span><span className="px-1.5 py-0.5 bg-[#3B2F2F] rounded text-[10px] font-medium text-[#FBBF24]">{meta.queryType}</span></div>
                             )}
                             {meta?.promptVersion && (
-                              <div className="flex justify-between"><span className="text-[#A8A29E]">Prompt Version</span><span className="font-mono">{meta.promptVersion}</span></div>
+                              <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Prompt Version</span><span className="font-mono">{meta.promptVersion}</span></div>
                             )}
                             {meta?.timing && (
                               <>
-                                <div className="flex justify-between"><span className="text-[#A8A29E]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
-                                <div className="flex justify-between"><span className="text-[#A8A29E]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
+                                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
+                                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
                                 {meta.retried && <div className="flex justify-between text-[#FBBF24]"><span>Retried</span><span>Yes</span></div>}
-                                <div className="flex justify-between font-medium"><span className="text-[#A8A29E]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
+                                <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
                               </>
                             )}
                             {meta?.domainsFetched && meta.domainsFetched.length > 0 && (
                               <div className="flex justify-between items-start">
-                                <span className="text-[#A8A29E]">Domains Fetched</span>
+                                <span className="text-[var(--color-ink-muted)]">Domains Fetched</span>
                                 <div className="flex flex-wrap gap-1 justify-end">
                                   {meta.domainsFetched.map(d => (
                                     <span key={d} className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-mono">{d}</span>
@@ -1161,7 +1138,7 @@ function App() {
                             )}
                             {meta?.granted && meta.granted.length > 0 && (
                               <div className="flex justify-between items-start">
-                                <span className="text-[#A8A29E]">Capabilities</span>
+                                <span className="text-[var(--color-ink-muted)]">Capabilities</span>
                                 <div className="flex flex-wrap gap-1 justify-end">
                                   {meta.granted.map(cap => (
                                     <span key={cap} className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-medium text-[#FBBF24]">{cap}</span>
@@ -1209,7 +1186,7 @@ function App() {
                                           <span className={`inline-block w-1.5 h-1.5 rounded-full ${ds.live ? "bg-[#4ADE80]" : "bg-[#78716C]"}`} />
                                           <span className="text-[#E7E5E4]">{ds.name}</span>
                                           {ds.url && <span className="text-[#78716C] font-mono text-[10px]">{ds.url}</span>}
-                                          <span className="text-[10px] text-[#A8A29E]">{ds.live ? "live" : "static"}</span>
+                                          <span className="text-[10px] text-[var(--color-ink-muted)]">{ds.live ? "live" : "static"}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1252,7 +1229,7 @@ function App() {
                                     <div className="text-[10px] uppercase tracking-wider text-[#78716C] mb-1">Computed Values</div>
                                     {meta.toolMeta.computedValues.primaryMetric && (
                                       <div className="bg-[#2A2520] rounded-lg px-3 py-2 mb-2">
-                                        <div className="text-[10px] text-[#A8A29E]">{meta.toolMeta.computedValues.primaryMetric.label}</div>
+                                        <div className="text-[10px] text-[var(--color-ink-muted)]">{meta.toolMeta.computedValues.primaryMetric.label}</div>
                                         <div className="text-base font-semibold text-[#FAFAF8]">
                                           {meta.toolMeta.computedValues.primaryMetric.value}
                                           {meta.toolMeta.computedValues.primaryMetric.unit && (
@@ -1265,7 +1242,7 @@ function App() {
                                       <div className="grid grid-cols-2 gap-2">
                                         {meta.toolMeta.computedValues.secondaryMetrics.map((m, i) => (
                                           <div key={i} className="bg-[#44403C] rounded px-2 py-1.5">
-                                            <div className="text-[10px] text-[#A8A29E]">{m.label}</div>
+                                            <div className="text-[10px] text-[var(--color-ink-muted)]">{m.label}</div>
                                             <div className="text-sm font-medium text-[#E7E5E4]">{m.value}</div>
                                           </div>
                                         ))}
@@ -1312,7 +1289,7 @@ function App() {
                                     <span className={`mt-0.5 flex-shrink-0 inline-block w-2 h-2 rounded-full ${isGranted ? "bg-[#4ADE80]" : "bg-[#57534E]"}`} />
                                     <div>
                                       <span className={`text-xs font-semibold ${isGranted ? "text-[#FBBF24]" : "text-[#78716C]"}`}>{key}</span>
-                                      <div className="text-[11px] text-[#A8A29E] mt-0.5">{desc}</div>
+                                      <div className="text-[11px] text-[var(--color-ink-muted)] mt-0.5">{desc}</div>
                                     </div>
                                   </div>
                                 );
@@ -1332,7 +1309,7 @@ function App() {
                           onChange={(e) => setRefineInput(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleRefine(); } }}
                           placeholder="Refine: add a column, change currency, make chart bigger..."
-                          className="flex-1 px-4 py-2.5 text-sm bg-white border-[1.5px] border-[#D6D3D1] rounded-lg outline-none placeholder:text-[#A8A29E] focus:border-[#C2410C]"
+                          className="flex-1 px-4 py-2.5 text-sm bg-white border-[1.5px] border-[#D6D3D1] rounded-lg outline-none placeholder:text-[var(--color-ink-muted)] focus:border-[#C2410C]"
                           disabled={refining}
                         />
                         <button
@@ -1347,7 +1324,7 @@ function App() {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -1398,7 +1375,7 @@ function App() {
               onChange={(e) => setRefineInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleRefine(); setMobileRefineOpen(false); } }}
               placeholder="Add a column, change currency, make chart bigger..."
-              className="w-full px-4 py-3 text-sm bg-[#FAFAF8] border-[1.5px] border-[#D6D3D1] rounded-xl outline-none placeholder:text-[#A8A29E] focus:border-[#C2410C]"
+              className="w-full px-4 py-3 text-sm bg-[#FAFAF8] border-[1.5px] border-[#D6D3D1] rounded-xl outline-none placeholder:text-[var(--color-ink-muted)] focus:border-[#C2410C]"
               autoFocus
             />
             <button
@@ -1428,7 +1405,7 @@ function App() {
                     className={`px-3 py-1.5 text-[11px] font-medium rounded-full transition-all ${
                       inspectorTab === tab
                         ? "bg-[#44403C] text-[#FAFAF8]"
-                        : "text-[#78716C] hover:text-[#A8A29E]"
+                        : "text-[#78716C] hover:text-[var(--color-ink-muted)]"
                     }`}
                   >
                     {tab === "meta" ? "Meta" : tab === "output" ? "Output" : tab === "code" ? "Code" : "Capabilities"}
@@ -1439,15 +1416,15 @@ function App() {
 
             {inspectorTab === "meta" && (
               <div className="px-4 py-3 text-xs space-y-1.5">
-                <div className="flex justify-between"><span className="text-[#A8A29E]">Run ID</span><span className="font-mono text-[11px]">{runId}</span></div>
-                <div className="flex justify-between"><span className="text-[#A8A29E]">Model</span><span>{meta?.model?.split("/").pop()}</span></div>
-                {meta?.tier && <div className="flex justify-between"><span className="text-[#A8A29E]">Tier</span><span className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-medium">{meta.tier}</span></div>}
-                {meta?.queryType && <div className="flex justify-between"><span className="text-[#A8A29E]">Query Type</span><span className="px-1.5 py-0.5 bg-[#3B2F2F] rounded text-[10px] font-medium text-[#FBBF24]">{meta.queryType}</span></div>}
+                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Run ID</span><span className="font-mono text-[11px]">{runId}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Model</span><span>{meta?.model?.split("/").pop()}</span></div>
+                {meta?.tier && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Tier</span><span className="px-1.5 py-0.5 bg-[#44403C] rounded text-[10px] font-medium">{meta.tier}</span></div>}
+                {meta?.queryType && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Query Type</span><span className="px-1.5 py-0.5 bg-[#3B2F2F] rounded text-[10px] font-medium text-[#FBBF24]">{meta.queryType}</span></div>}
                 {meta?.timing && (
                   <>
-                    <div className="flex justify-between"><span className="text-[#A8A29E]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
-                    <div className="flex justify-between"><span className="text-[#A8A29E]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
-                    <div className="flex justify-between font-medium"><span className="text-[#A8A29E]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
+                    <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
                   </>
                 )}
                 {meta?.granted && meta.granted.length > 0 && (
@@ -1490,7 +1467,7 @@ function App() {
                             <div key={i} className="flex items-center gap-2">
                               <span className={`inline-block w-1.5 h-1.5 rounded-full ${ds.live ? "bg-[#4ADE80]" : "bg-[#78716C]"}`} />
                               <span className="text-[#E7E5E4]">{ds.name}</span>
-                              <span className="text-[10px] text-[#A8A29E]">{ds.live ? "live" : "static"}</span>
+                              <span className="text-[10px] text-[var(--color-ink-muted)]">{ds.live ? "live" : "static"}</span>
                             </div>
                           ))}
                         </div>
@@ -1520,7 +1497,7 @@ function App() {
                       <div>
                         <div className="text-[10px] uppercase tracking-wider text-[#78716C] mb-1">Primary Metric</div>
                         <div className="bg-[#2A2520] rounded-lg px-3 py-2">
-                          <div className="text-[10px] text-[#A8A29E]">{meta.toolMeta.computedValues.primaryMetric.label}</div>
+                          <div className="text-[10px] text-[var(--color-ink-muted)]">{meta.toolMeta.computedValues.primaryMetric.label}</div>
                           <div className="text-base font-semibold text-[#FAFAF8]">
                             {meta.toolMeta.computedValues.primaryMetric.value}
                             {meta.toolMeta.computedValues.primaryMetric.unit && (
@@ -1563,7 +1540,7 @@ function App() {
                         <span className={`mt-0.5 flex-shrink-0 inline-block w-2 h-2 rounded-full ${isGranted ? "bg-[#4ADE80]" : "bg-[#57534E]"}`} />
                         <div>
                           <span className={`text-xs font-semibold ${isGranted ? "text-[#FBBF24]" : "text-[#78716C]"}`}>{key}</span>
-                          <div className="text-[11px] text-[#A8A29E] mt-0.5">{desc}</div>
+                          <div className="text-[11px] text-[var(--color-ink-muted)] mt-0.5">{desc}</div>
                         </div>
                       </div>
                     );
@@ -1577,23 +1554,28 @@ function App() {
 
       {/* Onboarding overlay for first-time visitors */}
       {showOnboarding && (
-        <div className="fixed inset-0 z-[200] bg-[#FAFAF8] flex flex-col items-center justify-center">
+        <div className="onboarding fixed inset-0 z-[200] flex flex-col items-center justify-center">
           {onboardingStep === 0 && (
             <div className="text-center px-6 max-w-lg animate-[fadeIn_0.8s_ease]">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1C1917] leading-tight mb-4"
-                  style={{ fontFamily: "'Georgia', serif" }}>
-                You ask a question.<br/>We build you a tool.
+              <h1 className="display text-5xl md:text-7xl leading-tight mb-6"
+                  style={{ fontFamily: "var(--font-display)" }}>
+                <em>Every question deserves<br/>more than words.</em>
               </h1>
-              <p className="text-lg text-[#78716C] mb-10">
+              <p className="text-lg text-[var(--color-ink-secondary)] mb-10">
                 Not a chatbot answer. A live, interactive tool.
               </p>
               <button onClick={() => setOnboardingStep(1)}
-                      className="px-8 py-3 bg-[#C2410C] text-white text-base font-semibold rounded-xl hover:bg-[#9A3412] transition-all">
-                See how &rarr;
+                      className="px-8 py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98]"
+                      style={{
+                        background: 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))',
+                        color: 'white',
+                        boxShadow: '0 4px 20px var(--color-ember-glow)',
+                      }}>
+                Watch &rarr;
               </button>
               <div className="mt-6">
                 <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                        className="text-sm text-[#A8A29E] hover:text-[#78716C] transition-colors">
+                        className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
                   Skip intro
                 </button>
               </div>
@@ -1602,16 +1584,16 @@ function App() {
 
           {onboardingStep === 1 && (
             <div className="w-full max-w-2xl px-6 animate-[fadeIn_0.6s_ease]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center" style={{ perspective: '1200px' }}>
                 {/* Question */}
-                <div className="bg-white rounded-2xl border border-[#E7E5E4] p-6 shadow-sm">
-                  <div className="text-[11px] uppercase tracking-wider text-[#A8A29E] font-semibold mb-3">You ask</div>
-                  <p className="text-lg font-medium text-[#1C1917]">"I earn 12L, how much tax?"</p>
+                <div className="bg-white rounded-2xl border border-[#E7E5E4] p-6 shadow-sm" style={{ transform: 'perspective(1200px) rotateY(-2deg)' }}>
+                  <div className="mono-label mb-3">You ask</div>
+                  <p className="text-lg font-medium text-[var(--color-ink)]">"I earn 12L, how much tax?"</p>
                 </div>
 
                 {/* Tool mockup */}
-                <div className="bg-[#f5ede0] rounded-2xl border border-[#E7E5E4] p-6 shadow-sm">
-                  <div className="text-[11px] uppercase tracking-wider text-[#C2410C] font-semibold mb-3">You get</div>
+                <div className="bg-[#f5ede0] rounded-2xl border border-[#E7E5E4] p-6 shadow-sm" style={{ transform: 'perspective(1200px) rotateY(-2deg)', boxShadow: '0 8px 40px var(--color-ember-glow)' }}>
+                  <div className="mono-label mb-3" style={{ color: 'var(--color-ember)' }}>You get</div>
                   <div className="space-y-3">
                     {/* Fake slider */}
                     <div>
@@ -1625,16 +1607,16 @@ function App() {
                     </div>
                     {/* Fake output */}
                     <div className="bg-[#1C1917] rounded-xl p-4 text-center">
-                      <div className="text-[10px] uppercase tracking-wider text-[#A8A29E] mb-1">Total Tax</div>
+                      <div className="text-[10px] uppercase tracking-wider text-[var(--color-ink-muted)] mb-1">Total Tax</div>
                       <div className="text-2xl font-bold text-[#FAFAF8]">&#8377;1,17,000</div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-white rounded-lg p-2 text-center">
-                        <div className="text-[9px] uppercase text-[#A8A29E]">Rate</div>
+                        <div className="text-[9px] uppercase text-[var(--color-ink-muted)]">Rate</div>
                         <div className="text-sm font-semibold text-[#1C1917]">9.8%</div>
                       </div>
                       <div className="bg-white rounded-lg p-2 text-center">
-                        <div className="text-[9px] uppercase text-[#A8A29E]">Monthly</div>
+                        <div className="text-[9px] uppercase text-[var(--color-ink-muted)]">Monthly</div>
                         <div className="text-sm font-semibold text-[#1C1917]">&#8377;9,750</div>
                       </div>
                     </div>
@@ -1642,17 +1624,22 @@ function App() {
                 </div>
               </div>
 
-              <p className="text-center text-sm text-[#78716C] mt-8 mb-6">
+              <p className="text-center text-sm text-[var(--color-ink-secondary)] mt-8 mb-6">
                 Custom-built in seconds using AI + secure sandboxing
               </p>
               <div className="text-center">
-                <button onClick={() => { setOnboardingStep(2); if (!query) setQuery("I earn 12L, how much tax do I pay?"); }}
-                        className="px-8 py-3 bg-[#C2410C] text-white text-base font-semibold rounded-xl hover:bg-[#9A3412] transition-all">
+                <button onClick={() => { setOnboardingStep(2); if (!query) setQuery("Rent vs buy a flat in Bangalore — show me the math"); }}
+                        className="px-8 py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98]"
+                        style={{
+                          background: 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))',
+                          color: 'white',
+                          boxShadow: '0 4px 20px var(--color-ember-glow)',
+                        }}>
                   Try it yourself &rarr;
                 </button>
                 <div className="mt-4">
                   <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                          className="text-sm text-[#A8A29E] hover:text-[#78716C] transition-colors">
+                          className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
                     Skip intro
                   </button>
                 </div>
@@ -1662,8 +1649,10 @@ function App() {
 
           {onboardingStep === 2 && (
             <div className="w-full max-w-lg px-6 text-center animate-[fadeIn_0.6s_ease]">
-              <h2 className="text-2xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: "'Georgia', serif" }}>Your turn</h2>
-              <p className="text-sm text-[#78716C] mb-6">Type anything, or try this one</p>
+              <h2 className="display text-4xl md:text-5xl mb-2" style={{ fontFamily: "var(--font-display)" }}>
+                <em>Your turn.</em>
+              </h2>
+              <p className="text-sm text-[var(--color-ink-secondary)] mb-6">Type anything, or try this one</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
                 localStorage.setItem("yukti-onboarded", "1");
@@ -1674,18 +1663,23 @@ function App() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-                  placeholder="How much tax do I pay on a 12L salary?"
+                  placeholder="Rent vs buy a flat in Bangalore — show me the math"
                   rows={2}
-                  className="w-full px-5 py-4 text-base bg-white border-[1.5px] border-[#D6D3D1] rounded-xl outline-none transition-all placeholder:text-[#A8A29E] focus:border-[#C2410C] focus:shadow-[0_0_0_3px_rgba(194,65,12,0.08)] resize-none"
+                  className="query-input"
                   autoFocus
                 />
                 <button type="submit" disabled={!query.trim()}
-                        className="mt-3 w-full py-3 bg-[#C2410C] text-white text-sm font-semibold rounded-xl hover:bg-[#9A3412] disabled:opacity-30 transition-all">
-                  Build my tool &rarr;
+                        className="mt-4 w-full py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed"
+                        style={{
+                          background: query.trim() ? 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))' : '#E5E3DF',
+                          color: query.trim() ? 'white' : '#A8A29E',
+                          boxShadow: query.trim() ? '0 4px 20px var(--color-ember-glow)' : 'none',
+                        }}>
+                  Forge it &rarr;
                 </button>
               </form>
               <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                      className="mt-4 text-sm text-[#A8A29E] hover:text-[#78716C] transition-colors">
+                      className="mt-4 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
                 Skip intro
               </button>
             </div>
