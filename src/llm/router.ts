@@ -194,8 +194,8 @@ const MODELS: Record<ModelTier, ModelConfig> = {
     label: "Claude Sonnet 4.6",
   },
   powerful: {
-    id: "anthropic/claude-opus-4-6",
-    label: "Claude Opus 4.6",
+    id: "anthropic/claude-sonnet-4-6",
+    label: "Claude Sonnet 4.6",
   },
 };
 
