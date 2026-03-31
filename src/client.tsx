@@ -1066,13 +1066,6 @@ function App() {
                           Refresh
                         </button>
                       </div>
-                      {meta?.granted && meta.granted.length > 0 && (
-                        <div className="hidden md:flex items-center gap-2 text-xs text-[var(--color-ink-muted)]">
-                          {meta.granted.map(cap => (
-                            <span key={cap} className="px-2 py-0.5 bg-white rounded text-[11px] font-medium">{cap}</span>
-                          ))}
-                        </div>
-                      )}
                     </div>
 
                     {/* Inspector panel */}
