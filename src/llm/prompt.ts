@@ -167,6 +167,16 @@ A base CSS stylesheet is automatically injected. Use these classes — do NOT wr
 **Progress:** .progress-bar, .progress-fill, .progress-fill.green
 **Other:** .divider, .sources, .fade
 
+**Rich Controls:**
+- .presets (flex row) + .preset (pill) + .preset.active — quick-select common values. Use anywhere a parameter has typical choices.
+- .toggle-row + .toggle + .toggle.on + .toggle-label + .toggle-hint — binary switch for any yes/no or A/B choice.
+- .input-group + .input-prefix — number input with unit prefix (₹, $, kg, %, years). Self-documenting inputs.
+- .info-row + .info-icon + .info-text — contextual notes, assumptions, tips. Better than plain text.
+**Hero Cards:** .hero-card (.green/.red/.blue/.amber/.dark) — gradient hero output cards. Use for the PRIMARY result. .hero-card .label, .hero-card .value, .hero-card .sub. MORE visual impact than .output.highlight.
+**Breakdowns:** .breakdown + .breakdown-row (.active/.total) — highlighted breakdown rows. .breakdown-label, .breakdown-rate, .breakdown-value. Active rows get left border + warm bg. Total row has top border + larger value.
+**Stats:** .stat-row + .stat-label + .stat-value (.green/.red/.amber/.large) — inline key/value pairs. .stat-row.highlight for emphasis.
+**Steps:** .step + .step-num + .step-content — numbered sequence for recipes/guides.
+
 **Colors:** text #1c1917, secondary #44403c, muted #96897a, bg #f5ede0 (warm cream), accent #c2652a (terracotta). Cards: #faf6ef with glass-card borders. NEVER use white backgrounds.
 
 ## Design rules
@@ -183,15 +193,22 @@ A base CSS stylesheet is automatically injected. Use these classes — do NOT wr
 - Write clean JavaScript. No frameworks. No CDN imports.
 - For stock/price data over time: render SVG line chart (simple polyline, no libraries). Colors: #C2410C line, #FFF7ED area fill.
 - Do NOT use inline styles for colors — use CSS classes. Do NOT put paragraph text inside output cards.
+- When a parameter has well-known common values, add .presets alongside the slider or input. Presets let users jump to typical values instantly (e.g., income levels, serving sizes, time periods, distances, weights). Clicking a preset should update the input AND recalculate.
+- When there's a yes/no or either/or choice, use .toggle instead of radio buttons, tabs, or dropdowns. Toggles are faster and more tactile (e.g., any on/off switch, any A-vs-B binary, any include/exclude decision).
+- For the PRIMARY result, always use .hero-card with the right color: .green for positive outcomes (savings, gains, health scores), .red for costs or negatives (taxes, risks, deficits), .blue for neutral data (weather, facts, prices), .dark for primary calculations. Hero cards have far more visual impact than plain .output cards.
+- When showing tiered/stepped data (tax slabs, pricing tiers, nutrient ranges, scoring bands), use .breakdown with .breakdown-row. Mark rows that apply to the user's input with .active. Always end with a .total row.
+- For contextual notes, assumptions, or helpful hints anywhere in the tool, use .info-row instead of plain <p> tags. The info icon draws the eye and distinguishes explanatory text from data.
+- When the user inputs a number with a unit (currency, weight, distance, percentage), use .input-group with .input-prefix showing the unit symbol (₹, $, kg, km, %). This makes the input self-documenting.
+- For sequential processes (recipes, guides, workouts, procedures), use .step with .step-num and .step-content instead of numbered paragraphs.
 
 ## Output philosophy
 
 Match output approach to query type:
 
-**Tool queries** (tax, SIP, EMI, rent vs buy): Deep interactivity — sliders, toggles, tabs, real-time recalculation, ONE hero number + supporting metrics.
-**Delight queries** (recipes, facts, explainers): Beautiful visual presentation — strong typography, generous spacing, ONE light interactive element max. Premium magazine feel.
-**Live data queries** (stocks, weather, earthquakes): Lead with hero number, add exploration controls (time range, filters, sort). Never just dump data — add visual layer (SVG charts, trend arrows).
-**Comparison queries** (X vs Y): Use .vs-grid, adjustable parameters on both sides, highlight winner.
+**Tool queries** (tax, SIP, EMI, rent vs buy, BMI, loan, budget): Deep interactivity — .hero-card for the main result, .presets for common values, .toggle for binary choices, .breakdown for tiered data, .info-row for context. Multiple inputs that recalculate everything instantly. Should feel like a premium app, not a homework calculator.
+**Delight queries** (recipes, facts, how-to, guides, explainers): Beautiful visual presentation — .step for instructions, .hero-card.amber for the key fact, .info-row for tips, ONE interactive element (serving scaler, unit toggle). Premium magazine feel with generous spacing.
+**Live data queries** (stocks, weather, earthquakes, crypto, sports): .hero-card.blue for the main data point, exploration controls (time range .presets, magnitude slider, sort .toggle). SVG charts for trends. Never just dump data — add visual layer.
+**Comparison queries** (X vs Y, pros/cons, which is better): .vs-grid with adjustable parameters on both sides. .hero-card.green for winner, .hero-card.red for loser. .breakdown for side-by-side metrics. .toggle to switch perspective.
 
 When in doubt, bias toward delight over tool-heaviness.
 
@@ -255,98 +272,117 @@ For "I earn 12L, how much tax do I pay?":
 
 export default {
   fetch() {
-    const html = \`<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Income Tax Calculator — FY 2025-26</title></head>
-<body>
-<h1>Income Tax Calculator</h1>
-<p class="subtitle">FY 2025-26 — Old vs New Regime</p>
+    const html = '<!DOCTYPE html>' +
+'<html lang="en">' +
+'<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Income Tax Calculator — FY 2025-26</title></head>' +
+'<body>' +
+'<h1>Income Tax Calculator</h1>' +
+'<p class="subtitle">FY 2025-26 — New Tax Regime</p>' +
 
-<div class="card">
-  <div class="card-header">Adjust Parameters</div>
-  <div class="control">
-    <label>Annual Income <span class="val" id="income-val">₹12,00,000</span></label>
-    <input type="range" id="income" min="300000" max="10000000" step="50000" value="1200000" oninput="calc()">
-  </div>
-</div>
+'<div class="card">' +
+  '<div class="card-header">Your Income</div>' +
+  '<div class="input-group">' +
+    '<span class="input-prefix">₹</span>' +
+    '<input type="number" id="income" value="1200000" step="50000" oninput="calc()">' +
+  '</div>' +
+  '<div class="presets" id="presets">' +
+    '<div class="preset" onclick="setIncome(500000)">5L</div>' +
+    '<div class="preset" onclick="setIncome(700000)">7L</div>' +
+    '<div class="preset" onclick="setIncome(1000000)">10L</div>' +
+    '<div class="preset active" onclick="setIncome(1200000)">12L</div>' +
+    '<div class="preset" onclick="setIncome(1500000)">15L</div>' +
+    '<div class="preset" onclick="setIncome(2000000)">20L</div>' +
+    '<div class="preset" onclick="setIncome(3000000)">30L</div>' +
+  '</div>' +
+  '<div class="toggle-row">' +
+    '<span class="toggle-label">Salaried Employee</span>' +
+    '<div class="toggle on" id="sal-toggle" onclick="toggleSalaried()"></div>' +
+  '</div>' +
+  '<div class="info-row">' +
+    '<span class="info-icon">i</span>' +
+    '<span class="info-text">Salaried employees get a flat ₹75,000 standard deduction under the new regime.</span>' +
+  '</div>' +
+'</div>' +
 
-<div class="tab-bar">
-  <div class="tab active" onclick="switchTab('new')">New Regime</div>
-  <div class="tab" onclick="switchTab('old')">Old Regime</div>
-</div>
+'<div class="grid-2" style="margin:1rem 0">' +
+  '<div class="hero-card green">' +
+    '<div class="label">Take-Home Pay</div>' +
+    '<div class="value" id="take-home">₹10,83,000</div>' +
+    '<div class="sub" id="monthly">Monthly: ₹90,250</div>' +
+  '</div>' +
+  '<div class="hero-card dark">' +
+    '<div class="label">Total Tax</div>' +
+    '<div class="value" id="total-tax">₹1,17,000</div>' +
+    '<div class="sub" id="eff-rate">Effective Rate: 9.8%</div>' +
+  '</div>' +
+'</div>' +
 
-<div id="result"></div>
+'<div class="card">' +
+  '<div class="card-header">How is this calculated?</div>' +
+  '<div class="stat-row"><span class="stat-label">Gross Income</span><span class="stat-value" id="gross">₹12,00,000</span></div>' +
+  '<div class="stat-row"><span class="stat-label muted">Standard Deduction</span><span class="stat-value green" id="deduction">- ₹75,000</span></div>' +
+  '<div class="stat-row highlight"><span class="stat-label">Taxable Income</span><span class="stat-value large" id="taxable">₹11,25,000</span></div>' +
+  '<div id="slabs"></div>' +
+'</div>' +
 
-<div class="sources">
-  <p><strong>Sources:</strong> Income Tax Act 2025. Budget 2025-26 slab rates.</p>
-  <p><strong>Assumptions:</strong> Standard deduction ₹75,000 (New) / ₹50,000 (Old). 4% Health & Education Cess.</p>
-  <p><strong>Limitations:</strong> Does not include HRA, 80C, 80D, or other chapter VI-A deductions.</p>
-</div>
+'<div class="sources">' +
+  '<p><strong>Sources:</strong> Income Tax Act 2025. Budget 2025-26 slab rates.</p>' +
+  '<p><strong>Assumptions:</strong> New regime. Standard deduction ₹75,000 for salaried. 4% Health & Education Cess.</p>' +
+  '<p><strong>Limitations:</strong> Does not include HRA, 80C, 80D deductions (old regime only).</p>' +
+'</div>' +
 
-<script>
-let regime = 'new';
+'<script type="application/json" id="yukti-meta">' +
+'{"toolType":"calculator","title":"Income Tax Calculator — FY 2025-26","inputs":["income","salaried"],"dataSources":[{"name":"Income Tax Act 2025","url":"","live":false}],"assumptions":["Standard deduction ₹75,000 (salaried)","4% Health & Education Cess"],"limitations":["Does not include HRA, 80C, 80D deductions"],"computedValues":{"primaryMetric":{"label":"Total Tax","value":"dynamic","unit":"INR"}}}' +
+'</script>' +
 
-const newSlabs = [[0,400000,0],[400000,800000,0.05],[800000,1200000,0.10],[1200000,1600000,0.15],[1600000,2000000,0.20],[2000000,2400000,0.25],[2400000,Infinity,0.30]];
-const oldSlabs = [[0,250000,0],[250000,500000,0.05],[500000,1000000,0.20],[1000000,Infinity,0.30]];
+'<script>' +
+'var salaried = true;' +
+'var slabs = [[0,400000,0],[400000,800000,0.05],[800000,1200000,0.10],[1200000,1600000,0.15],[1600000,2000000,0.20],[2000000,2400000,0.25],[2400000,Infinity,0.30]];' +
 
-function switchTab(t) {
-  regime = t;
-  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.textContent.toLowerCase().includes(t)));
-  calc();
-}
+'function fmt(n) { return new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",maximumFractionDigits:0}).format(n) }' +
 
-function fmt(n) { return new Intl.NumberFormat('en-IN', {style:'currency',currency:'INR',maximumFractionDigits:0}).format(n) }
+'function setIncome(v) {' +
+'  document.getElementById("income").value = v;' +
+'  document.querySelectorAll(".preset").forEach(function(el) { el.classList.toggle("active", parseInt(el.textContent) * 100000 === v || el.textContent === (v/100000) + "L"); });' +
+'  calc();' +
+'}' +
 
-function taxFor(income, slabs) {
-  let tax = 0;
-  for (const [lo, hi, rate] of slabs) {
-    if (income <= lo) break;
-    tax += (Math.min(income, hi) - lo) * rate;
-  }
-  return tax;
-}
+'function toggleSalaried() {' +
+'  salaried = !salaried;' +
+'  document.getElementById("sal-toggle").classList.toggle("on", salaried);' +
+'  calc();' +
+'}' +
 
-function calc() {
-  const income = +document.getElementById('income').value;
-  document.getElementById('income-val').textContent = fmt(income);
-  const slabs = regime === 'new' ? newSlabs : oldSlabs;
-  const stdDeduction = regime === 'new' ? 75000 : 50000;
-  const taxableIncome = Math.max(0, income - stdDeduction);
-  const tax = taxFor(taxableIncome, slabs);
-  const cess = tax * 0.04;
-  const total = tax + cess;
-  const effective = income > 0 ? (total / income * 100).toFixed(1) : '0.0';
-  const monthly = total / 12;
-  const takeHome = income - total;
-
-  document.getElementById('result').innerHTML =
-    '<div class="result-banner"><div class="value">' + fmt(total) + '</div><div class="label">Total Tax Payable</div><div class="sub">' + regime.charAt(0).toUpperCase() + regime.slice(1) + ' Regime · After 4% Cess</div></div>' +
-    '<div class="grid-3" style="margin:1rem 0">' +
-      '<div class="output"><div class="label">Effective Rate</div><div class="value">' + effective + '%</div><div class="sub">on gross income</div></div>' +
-      '<div class="output"><div class="label">Monthly TDS</div><div class="value">' + fmt(monthly) + '</div><div class="sub">per month</div></div>' +
-      '<div class="output"><div class="label">Take-Home</div><div class="value green">' + fmt(takeHome) + '</div><div class="sub">annual net</div></div>' +
-    '</div>' +
-    '<div class="card"><div class="card-header">Slab Breakdown</div>' + slabTable(taxableIncome, slabs) + '</div>';
-}
-
-function slabTable(taxable, slabs) {
-  var h = '<table><tr><th>Slab</th><th>Rate</th><th>Tax</th></tr>';
-  for (var i = 0; i < slabs.length; i++) {
-    var lo = slabs[i][0], hi = slabs[i][1], rate = slabs[i][2];
-    if (taxable <= lo) break;
-    var amt = (Math.min(taxable, hi) - lo) * rate;
-    var hiLabel = hi === Infinity ? 'Above ' + fmt(lo) : fmt(lo) + ' - ' + fmt(hi);
-    h += '<tr><td>' + hiLabel + '</td><td>' + (rate*100) + '%</td><td>' + fmt(amt) + '</td></tr>';
-  }
-  h += '</table>';
-  return h;
-}
-calc();
-</script>
-<script type="application/json" id="yukti-meta">
-{"toolType":"calculator","title":"Income Tax Calculator — FY 2025-26","inputs":["income","regime"],"dataSources":[{"name":"Income Tax Act 2025","url":"","live":false}],"assumptions":["Standard deduction ₹75,000 (New) / ₹50,000 (Old)","4% Health & Education Cess"],"limitations":["Does not include HRA, 80C, 80D deductions"],"computedValues":{"primaryMetric":{"label":"Total Tax","value":"dynamic","unit":"INR"}}}
-</script>
-</body></html>\`;
+'function calc() {' +
+'  var income = +document.getElementById("income").value;' +
+'  var deduction = salaried ? 75000 : 0;' +
+'  var taxable = Math.max(0, income - deduction);' +
+'  var tax = 0;' +
+'  var slabHtml = "<div class=\\"breakdown\\">";' +
+'  for (var i = 0; i < slabs.length; i++) {' +
+'    var lo = slabs[i][0], hi = slabs[i][1], rate = slabs[i][2];' +
+'    if (taxable <= lo) { slabHtml += "<div class=\\"breakdown-row\\"><span class=\\"breakdown-label\\">" + (hi === Infinity ? "Above " + fmt(lo) : fmt(lo) + " - " + fmt(hi)) + " <span class=\\"breakdown-rate\\">(@" + (rate*100) + "%)</span></span><span class=\\"breakdown-value\\">-</span></div>"; continue; }' +
+'    var amt = (Math.min(taxable, hi) - lo) * rate;' +
+'    tax += amt;' +
+'    slabHtml += "<div class=\\"breakdown-row active\\"><span class=\\"breakdown-label\\">" + (hi === Infinity ? "Above " + fmt(lo) : fmt(lo) + " - " + fmt(hi)) + " <span class=\\"breakdown-rate\\">(@" + (rate*100) + "%)</span></span><span class=\\"breakdown-value\\">" + fmt(amt) + "</span></div>";' +
+'  }' +
+'  var cess = tax * 0.04;' +
+'  var total = tax + cess;' +
+'  slabHtml += "<div class=\\"breakdown-row\\"><span class=\\"breakdown-label muted\\">Health & Education Cess</span><span class=\\"breakdown-value\\">" + fmt(cess) + "</span></div>";' +
+'  slabHtml += "<div class=\\"breakdown-row total\\"><span class=\\"breakdown-label\\">Total Tax Payable</span><span class=\\"breakdown-value\\">" + fmt(total) + "</span></div>";' +
+'  slabHtml += "</div>";' +
+'  document.getElementById("slabs").innerHTML = slabHtml;' +
+'  document.getElementById("gross").textContent = fmt(income);' +
+'  document.getElementById("deduction").textContent = "- " + fmt(deduction);' +
+'  document.getElementById("taxable").textContent = fmt(taxable);' +
+'  document.getElementById("total-tax").textContent = fmt(total);' +
+'  document.getElementById("take-home").textContent = fmt(income - total);' +
+'  document.getElementById("monthly").textContent = "Monthly: " + fmt((income - total) / 12);' +
+'  document.getElementById("eff-rate").textContent = "Effective Rate: " + (income > 0 ? (total / income * 100).toFixed(1) : "0.0") + "%";' +
+'}' +
+'calc();' +
+'</script>' +
+'</body></html>';
     return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 }

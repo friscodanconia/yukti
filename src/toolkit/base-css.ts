@@ -105,7 +105,7 @@ p{margin-bottom:0.75rem;color:#78716c;font-size:0.8125rem;line-height:1.6}
 /* Slider track fill via CSS custom property --fill (updated by base script) */
 input[type=range]{
   -webkit-appearance:none;width:100%;height:8px;border-radius:100px;
-  background:linear-gradient(90deg,#c2652a var(--fill,50%),#ddd2c0 var(--fill,50%));
+  background:linear-gradient(90deg,#c2652a var(--fill,0%),#ddd2c0 var(--fill,0%));
   outline:none;cursor:pointer;margin:0.5rem 0;
 }
 input[type=range]::-webkit-slider-thumb{
@@ -258,6 +258,120 @@ tfoot td,tr.total td{border-top:2px solid rgba(191,176,154,0.35);font-weight:700
 .mt-0{margin-top:0}.mt-1{margin-top:0.375rem}.mt-2{margin-top:0.75rem}.mt-3{margin-top:1.25rem}
 .mb-0{margin-bottom:0}.mb-1{margin-bottom:0.375rem}.mb-2{margin-bottom:0.75rem}
 .gap-sm{gap:0.375rem}.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.w-full{width:100%}
+
+/* ── Presets — quick-select pill row ── */
+.presets{display:flex;flex-wrap:wrap;gap:0.375rem;margin:0.5rem 0}
+.preset{
+  padding:0.375rem 0.875rem;font-size:0.75rem;font-weight:600;
+  border-radius:100px;cursor:pointer;transition:all 0.15s;
+  border:1.5px solid rgba(191,176,154,0.3);background:#faf6ef;color:#44403c;
+}
+.preset:hover{border-color:#c2652a;color:#c2652a}
+.preset.active{background:#c2652a;color:#fff;border-color:#c2652a;box-shadow:0 2px 8px rgba(194,101,42,0.25)}
+
+/* ── Toggle Switch ── */
+.toggle-row{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0}
+.toggle-label{font-size:0.8125rem;font-weight:500;color:#44403c}
+.toggle{
+  position:relative;width:44px;height:24px;border-radius:100px;
+  background:#ddd2c0;cursor:pointer;transition:background 0.2s;flex-shrink:0;
+}
+.toggle.on{background:#c2652a}
+.toggle::after{
+  content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;
+  border-radius:50%;background:white;transition:transform 0.2s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle.on::after{transform:translateX(20px)}
+.toggle-hint{font-size:0.6875rem;color:#96897a;margin-top:0.125rem}
+
+/* ── Hero Cards — gradient variants ── */
+.hero-card{
+  border-radius:18px;padding:1.5rem;text-align:center;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.1);
+}
+.hero-card .label{font-size:0.625rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:0.25rem;opacity:0.8}
+.hero-card .value{font-size:2rem;font-weight:700;line-height:1.1;letter-spacing:-0.02em}
+.hero-card .sub{font-size:0.75rem;margin-top:0.375rem;opacity:0.7}
+.hero-card.green{background:linear-gradient(135deg,#166534,#22c55e);color:white}
+.hero-card.green .label,.hero-card.green .sub{color:rgba(255,255,255,0.8)}
+.hero-card.red{background:linear-gradient(135deg,#991b1b,#ef4444);color:white}
+.hero-card.red .label,.hero-card.red .sub{color:rgba(255,255,255,0.8)}
+.hero-card.blue{background:linear-gradient(135deg,#1e40af,#3b82f6);color:white}
+.hero-card.blue .label,.hero-card.blue .sub{color:rgba(255,255,255,0.8)}
+.hero-card.amber{background:linear-gradient(135deg,#92400e,#f59e0b);color:white}
+.hero-card.amber .label,.hero-card.amber .sub{color:rgba(255,255,255,0.8)}
+.hero-card.dark{background:linear-gradient(135deg,#1c1917,#292524,#3a2e1e);color:#f5ede0}
+.hero-card.dark .label,.hero-card.dark .sub{color:#96897a}
+
+/* ── Breakdown — highlighted rows ── */
+.breakdown{border-radius:14px;overflow:hidden;margin:0.75rem 0}
+.breakdown-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.75rem 1rem;border-bottom:1px solid rgba(191,176,154,0.12);
+  font-size:0.8125rem;transition:background 0.15s;
+}
+.breakdown-row:last-child{border-bottom:none}
+.breakdown-row.active{background:#fef3ec;border-left:3px solid #c2652a}
+.breakdown-row.active .breakdown-value{color:#c2652a;font-weight:700}
+.breakdown-row .breakdown-label{color:#44403c;font-weight:500}
+.breakdown-row .breakdown-rate{color:#96897a;font-size:0.75rem}
+.breakdown-row .breakdown-value{color:#1c1917;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.breakdown-row.total{background:#faf6ef;font-weight:700;border-top:2px solid rgba(191,176,154,0.3)}
+.breakdown-row.total .breakdown-value{font-size:1rem;color:#c2652a}
+
+/* ── Number Input with Prefix ── */
+.input-group{
+  display:flex;align-items:center;border:1.5px solid rgba(191,176,154,0.3);
+  border-radius:12px;background:#faf6ef;overflow:hidden;transition:border-color 0.15s;
+}
+.input-group:focus-within{border-color:#c2652a;box-shadow:0 0 0 3px rgba(194,101,42,0.1)}
+.input-prefix{
+  padding:0.5rem 0.75rem;font-size:0.875rem;font-weight:600;color:#96897a;
+  background:rgba(191,176,154,0.1);border-right:1px solid rgba(191,176,154,0.2);
+}
+.input-group input{
+  flex:1;border:none;background:transparent;padding:0.5rem 0.75rem;
+  font-size:1rem;font-weight:600;color:#1c1917;outline:none;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── Info Row ── */
+.info-row{
+  display:flex;align-items:flex-start;gap:0.5rem;
+  padding:0.5rem 0.75rem;background:rgba(191,176,154,0.08);
+  border-radius:10px;margin:0.5rem 0;
+}
+.info-icon{
+  flex-shrink:0;width:16px;height:16px;border-radius:50%;
+  background:#c2652a;color:white;font-size:0.625rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+.info-text{font-size:0.75rem;color:#78716c;line-height:1.5}
+
+/* ── Stat Row — inline key/value ── */
+.stat-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:0.625rem 0;border-bottom:1px solid rgba(191,176,154,0.12);
+}
+.stat-row:last-child{border-bottom:none}
+.stat-row .stat-label{font-size:0.8125rem;color:#44403c;font-weight:500}
+.stat-row .stat-label.muted{color:#96897a}
+.stat-row .stat-value{font-size:0.875rem;font-weight:600;color:#1c1917;font-variant-numeric:tabular-nums}
+.stat-row .stat-value.green{color:#166534}
+.stat-row .stat-value.red{color:#dc2626}
+.stat-row .stat-value.amber{color:#c2652a}
+.stat-row .stat-value.large{font-size:1.25rem;font-weight:700}
+.stat-row.highlight{background:#fef3ec;margin:0 -1rem;padding:0.75rem 1rem;border-radius:10px;border:none}
+
+/* ── Steps — numbered sequence ── */
+.step{display:flex;gap:0.875rem;margin-bottom:1.25rem}
+.step-num{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:#c2652a;color:white;font-size:0.75rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-content{flex:1;font-size:0.875rem;line-height:1.7;color:#44403c}
 `.trim();
 
 /**
