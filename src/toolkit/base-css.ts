@@ -17,6 +17,24 @@ body{
   max-width:740px;margin:0 auto;padding:2.5rem 1.75rem 4rem;
   letter-spacing:0.01em;
 }
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(255,247,236,0.65),transparent 45%),
+    radial-gradient(circle at 90% 10%,rgba(255,230,204,0.45),transparent 40%);
+  z-index:-2;
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23d6c4ad' opacity='0.35'/%3E%3C/svg%3E\");
+  opacity:0.45;
+  z-index:-1;
+  mix-blend-mode:soft-light;
+}
 @media(max-width:640px){body{padding:1.75rem 1.25rem 3rem;font-size:0.875rem}}
 
 /* ── Typography ── */
@@ -35,9 +53,27 @@ p{margin-bottom:0.75rem;color:#78716c;font-size:0.8125rem;line-height:1.6}
   padding:1.5rem;
   margin-bottom:0.875rem;
   box-shadow:0 2px 6px rgba(0,0,0,0.07),0 8px 28px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.75);
+  position:relative;
+  overflow:hidden;
 }
 .card h3{margin-top:0}
 .card-header{font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;color:#96897a;margin-bottom:0.875rem;padding-bottom:0.75rem;border-bottom:1.5px solid rgba(191,176,154,0.25)}
+.card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.4),rgba(255,255,255,0));
+  opacity:0.65;
+  pointer-events:none;
+}
+.card::after{
+  content:'';
+  position:absolute;
+  inset:1px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.35);
+  pointer-events:none;
+}
 
 /* ── Layout ── */
 .section{margin-top:1.5rem}

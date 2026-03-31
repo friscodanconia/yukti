@@ -89,6 +89,20 @@ npx wrangler secret put GOOGLE_API_KEY
 npx vite build && npx wrangler deploy
 ```
 
+## QA / smoke tests
+
+Run lightweight automated checks against any deployed instance (local or remote):
+
+```bash
+# Defaults to the live worker
+npm run smoke
+
+# Target a local dev server
+SMOKE_BASE_URL=http://127.0.0.1:8787 npm run smoke
+```
+
+The script verifies the landing page, the static `/api/test` tool, the clarification endpoint, and (when KV is configured) `/api/stats`. Failures exit non‑zero so the task can gate commits or CI runs.
+
 ## API catalog
 
 The Dynamic Worker can fetch from any public API. The system prompt suggests these:

@@ -606,7 +606,7 @@ function App() {
   const showClarification = !!(clarifyQuestions && clarifyQuestions.length > 0);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
+    <div className="app-shell">
       {/* Tool ready notification banner */}
       {toolReady && backgrounded && (
         <div className="sticky top-0 z-[100] animate-[fadeIn_0.3s_ease]">
@@ -1025,13 +1025,26 @@ function App() {
             )}
             {html && !refining && (
               <>
-                <iframe
-                  ref={iframeRef}
-                  srcDoc={html}
-                  className="flex-1 w-full border-none pb-[56px] md:pb-0"
-                  sandbox="allow-scripts"
-                  title="Interactive Tool"
-                />
+                <div className="tool-stage-wrapper">
+                  <div className="tool-stage">
+                    <div className="tool-stage__chrome">
+                      <span className="tool-stage__dot" />
+                      <span className="tool-stage__dot" />
+                      <span className="tool-stage__dot" />
+                      <div className="tool-stage__label">
+                        <span className="tool-stage__label-pill">Live</span>
+                        <span className="tool-stage__label-text">Interactive workspace</span>
+                      </div>
+                    </div>
+                    <iframe
+                      ref={iframeRef}
+                      srcDoc={html}
+                      className="tool-stage__frame"
+                      sandbox="allow-scripts"
+                      title="Interactive Tool"
+                    />
+                  </div>
+                </div>
                 {/* Inspector + Refine bar (desktop only) */}
                 {code && (
                   <div className="hidden md:block border-t border-[#E7E5E4]">
