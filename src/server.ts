@@ -14,7 +14,7 @@
 import { SYSTEM_PROMPT, buildUserPrompt } from "./llm/prompt";
 import { classifyComplexity, callLLM, CLARIFY_PROMPT } from "./llm/router";
 import { validateWorkerCode, injectBaseCSS } from "./toolkit/validate";
-import { BASE_CSS } from "./toolkit/base-css";
+import { BASE_CSS, BASE_SCRIPT } from "./toolkit/base-css";
 import { generateFetchGuard } from "./toolkit/outbound";
 
 // ── Gemini Image Generation ─────────────────────────────
@@ -195,7 +195,7 @@ export default {
         timing.execMs = Date.now() - execStart;
 
         // 4. Inject base CSS + hero image
-        html = injectBaseCSS(html, BASE_CSS);
+        html = injectBaseCSS(html, BASE_CSS, BASE_SCRIPT);
         if (heroImage) {
           html = injectHeroImage(html, heroImage);
         }
@@ -286,7 +286,7 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
           }, { status: 502 });
         }
 
-        html = injectBaseCSS(html, BASE_CSS);
+        html = injectBaseCSS(html, BASE_CSS, BASE_SCRIPT);
         const totalMs = Date.now() - totalStart;
 
         // Save refined version
@@ -392,7 +392,7 @@ calc();
 
       try {
         let { html } = await executeInWorker(env, testCode, "tax calculator test");
-        html = injectBaseCSS(html, BASE_CSS);
+        html = injectBaseCSS(html, BASE_CSS, BASE_SCRIPT);
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -412,7 +412,7 @@ calc();
         const runId = generateRunId();
         const start = Date.now();
         const { html: rawHtml, granted } = await executeInWorker(env, code, topic);
-        const html = injectBaseCSS(rawHtml, BASE_CSS);
+        const html = injectBaseCSS(rawHtml, BASE_CSS, BASE_SCRIPT);
         const execMs = Date.now() - start;
 
         // Save refreshed version

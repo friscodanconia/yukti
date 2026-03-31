@@ -191,7 +191,7 @@ IMPORTANT:
 **Layout:** .section, .card (cream rounded container with shadow + .card-header uppercase label — USE THIS to group sliders/controls), .grid-2, .grid-3, .grid-4
 **Panels:** .panel (cream container), .panel.warm (warm peach tint), .panel.cool (blue tint), .panel.green (green tint), .panel.muted (darker cream)
 **Typography:** h1, h2, h3, p, .subtitle, .card-header (uppercase label inside a card with bottom border)
-**Controls:** .control (wrapper), label, .val (terracotta value in peach badge), input[type=range], select, button, button.primary, button.accent
+**Controls:** .control (wrapper), label, .val (terracotta value in peach badge), input[type=range] (track fill is auto-updated — NO manual gradient JS needed), select, button, button.primary, button.accent
 **Output:** .output (cream card), .output.highlight (DARK bg with cream text — use for PRIMARY metric), .output .label, .output .value, .output .value.green/.red/.amber, .output .sub (subtitle)
 **Result banner:** .result-banner (dark gradient hero with radial glow — use for THE ONE big number), .result-banner .value (2.5rem), .result-banner .label, .result-banner .sub
 **Comparison:** .vs-grid (connected 3-col: warm left | divider | green right), .vs-col, .vs-divider (centered "vs" on muted bg), .vs-badge.win (terracotta callout), .vs-badge.alt (muted note)
@@ -212,6 +212,7 @@ IMPORTANT DESIGN RULES:
 - For meter bars (.meter-fill), use different color classes per row (.green for good, default terracotta for neutral, .red for bad, .muted for minor) to create visual richness instead of monotone bars.
 
 - Use these classes. Do NOT write CSS for basics (fonts, colors, spacing). Only add <style> for custom layout needs specific to your page.
+- Slider track fills are handled automatically by injected base JavaScript. You do NOT need to manually update the range input gradient — just update your displayed .val span and recalculate outputs.
 - Colors: text #1c1917, secondary #44403c, muted #96897a, bg #f5ede0 (warm cream — NOT white), accent #c2652a (terracotta)
 - Cards use glass-card style: background #faf6ef (raised cream), semi-transparent borders
 - .output.highlight uses DARK background (#1c1917) with cream text — use for the PRIMARY result

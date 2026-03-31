@@ -61,18 +61,27 @@ export function validateWorkerCode(code: string): ValidationResult {
 }
 
 /**
- * Inject base CSS into the HTML returned by the Dynamic Worker.
+ * Inject base CSS (and optional script) into the HTML returned by the Dynamic Worker.
+ * The script is injected as a deferred inline <script> before </body> so it runs
+ * after the page's own JavaScript has set up DOM structure.
  */
-export function injectBaseCSS(html: string, css: string): string {
+export function injectBaseCSS(html: string, css: string, script?: string): string {
   const styleTag = `<style>${css}</style>`;
+  const scriptTag = script ? `<script>${script}</script>` : "";
+
+  if (html.includes("</head>") && html.includes("</body>")) {
+    return html
+      .replace("</head>", styleTag + "</head>")
+      .replace("</body>", scriptTag + "</body>");
+  }
 
   if (html.includes("</head>")) {
-    return html.replace("</head>", styleTag + "</head>");
+    return html.replace("</head>", styleTag + "</head>") + scriptTag;
   }
 
   if (!html.includes("<!DOCTYPE") && !html.includes("<html")) {
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styleTag}</head><body>${html}</body></html>`;
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styleTag}</head><body>${html}${scriptTag}</body></html>`;
   }
 
-  return html.replace(/<html[^>]*>/, match => match + `<head>${styleTag}</head>`);
+  return html.replace(/<html[^>]*>/, match => match + `<head>${styleTag}</head>`) + scriptTag;
 }
