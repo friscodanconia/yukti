@@ -16,5 +16,8 @@
   ],
   "observability": {
     "enabled": true
-  }
+  },
+  // Tail Worker for Dynamic Worker observability (console.log, fetch events, exceptions).
+  // Uncomment after deploying the tail worker: wrangler deploy --name yukti-tail src/tail-worker.ts
+  // "tail_consumers": [{ "service": "yukti-tail" }]
 }

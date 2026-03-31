@@ -11,9 +11,9 @@
  * 7. If anything fails, retry once with error context
  */
 
-import { SYSTEM_PROMPT, buildUserPrompt } from "./llm/prompt";
-import { classifyComplexity, callLLM, CLARIFY_PROMPT } from "./llm/router";
-import { validateWorkerCode, injectBaseCSS } from "./toolkit/validate";
+import { SYSTEM_PROMPT, buildUserPrompt, PROMPT_VERSION } from "./llm/prompt";
+import { classifyComplexity, classifyQuery, callLLM, CLARIFY_PROMPT, isToolWorthy } from "./llm/router";
+import { validateWorkerCode, sanitizeCode, injectBaseCSS } from "./toolkit/validate";
 import { BASE_CSS, BASE_SCRIPT } from "./toolkit/base-css";
 import { generateFetchGuard } from "./toolkit/outbound";
 
@@ -83,9 +83,95 @@ function injectHeroImage(html: string, imageDataUri: string): string {
   return html.replace(/<body([^>]*)>/i, `<body$1>${heroHtml}`);
 }
 
+// ── Structured metadata extraction ─────────────────────────
+interface ToolMeta {
+  toolType?: string;
+  title?: string;
+  inputs?: string[];
+  dataSources?: { name: string; url: string; live: boolean }[];
+  assumptions?: string[];
+  limitations?: string[];
+  computedValues?: {
+    primaryMetric?: { label: string; value: string; unit?: string };
+    secondaryMetrics?: { label: string; value: string }[];
+  };
+}
+
+function extractToolMeta(html: string): ToolMeta | null {
+  const match = html.match(/<script\s+type="application\/json"\s+id="yukti-meta">([\s\S]*?)<\/script>/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+// ── Cookie helpers ─────────────────────────────────────────
+function getCookie(request: Request, name: string): string | null {
+  const cookies = request.headers.get("Cookie") || "";
+  const match = cookies.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? match[1] : null;
+}
+
+async function getUserData(env: Env, uid: string): Promise<{ tools: any[]; createdAt: string }> {
+  try {
+    const raw = await env.TOOLS_KV.get(`user:${uid}`);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { tools: [], createdAt: new Date().toISOString() };
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    // ── User identity via cookie ──────────────────────────────
+    let uid = getCookie(request, "yukti-uid");
+    const isNewUser = !uid;
+    if (!uid) {
+      uid = crypto.randomUUID();
+    }
+
+    function withUserCookie(response: Response): Response {
+      if (isNewUser) {
+        const res = new Response(response.body, response);
+        res.headers.append("Set-Cookie", `yukti-uid=${uid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${86400 * 365}`);
+        return res;
+      }
+      return response;
+    }
+
+    const response = await this.handleRequest(request, env, uid);
+    return withUserCookie(response);
+  },
+
+  async handleRequest(request: Request, env: Env, uid: string): Promise<Response> {
     const url = new URL(request.url);
+
+    // ── API: User data ────────────────────────────────────────
+    if (url.pathname === "/api/me" && request.method === "GET") {
+      if (!env.TOOLS_KV) return Response.json({ tools: [] });
+      const userData = await getUserData(env, uid);
+      return Response.json(userData);
+    }
+
+    if (url.pathname === "/api/me/tools" && request.method === "POST") {
+      if (!env.TOOLS_KV) return Response.json({ ok: false, error: "KV not configured" }, { status: 500 });
+      const { runId, query, toolUrl, model } = await request.json<{ runId: string; query: string; toolUrl: string; model: string }>();
+      const userData = await getUserData(env, uid);
+      const tool = { runId, query, toolUrl, model, savedAt: new Date().toISOString() };
+      userData.tools = [tool, ...userData.tools.filter((t: any) => t.runId !== runId)].slice(0, 100);
+      await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });
+      return Response.json({ ok: true, tools: userData.tools });
+    }
+
+    if (url.pathname === "/api/me/tools" && request.method === "DELETE") {
+      if (!env.TOOLS_KV) return Response.json({ ok: false, error: "KV not configured" }, { status: 500 });
+      const { runId } = await request.json<{ runId: string }>();
+      const userData = await getUserData(env, uid);
+      userData.tools = userData.tools.filter((t: any) => t.runId !== runId);
+      await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });
+      return Response.json({ ok: true, tools: userData.tools });
+    }
 
     // ── API: Check if query needs clarification ────────────
     if (url.pathname === "/api/clarify" && request.method === "POST") {
@@ -114,6 +200,193 @@ export default {
       }
     }
 
+    // ── API: Stream generation with SSE ────────────────────────
+    if (url.pathname === "/api/stream" && request.method === "POST") {
+      const { topic } = await request.json<{ topic: string }>();
+      if (!topic?.trim()) {
+        return Response.json({ error: "Topic is required" }, { status: 400 });
+      }
+      if (!env.OPENROUTER_API_KEY) {
+        return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 500 });
+      }
+
+      // Scope check — reject queries that aren't suited for tool generation
+      const worthiness = isToolWorthy(topic);
+      if (!worthiness.worthy) {
+        return Response.json({
+          ok: false,
+          notToolWorthy: true,
+          reason: worthiness.reason,
+          suggestion: worthiness.suggestion,
+        });
+      }
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          const send = (event: string, data: object) => {
+            controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+          };
+
+          try {
+            const runId = generateRunId();
+            const timing: Record<string, number> = {};
+            const totalStart = Date.now();
+
+            // 1. Classify
+            send("stage", { stage: "classifying", detail: "Analyzing query complexity" });
+            const classification = classifyQuery(topic);
+            const tier = classification.tier;
+            const queryType = classification.queryType;
+            const userPrompt = buildUserPrompt(topic);
+            const wantsImage = (queryType === "delight" || isDelightQuery(topic)) && env.GEMINI_API_KEY;
+
+            // 2. Generate code with LLM
+            send("stage", { stage: "generating", detail: "Writing Worker code with Claude" });
+            const llmStart = Date.now();
+            const [llmResult, heroImage] = await Promise.all([
+              callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt),
+              wantsImage ? generateGeminiImage(env.GEMINI_API_KEY, topic) : Promise.resolve(null),
+            ]);
+            let code = sanitizeCode(cleanCode(llmResult.text));
+            timing.llmMs = Date.now() - llmStart;
+            if (heroImage) console.log(`[${runId}] Gemini image generated (${Math.round(heroImage.length / 1024)}KB)`);
+
+            // 3. Validate
+            send("stage", { stage: "validating", detail: "Checking code safety and structure" });
+            let validation = validateWorkerCode(code);
+            if (validation.warnings.length) {
+              console.warn(`[${runId}] Validation warnings:`, validation.warnings);
+            }
+            if (!validation.valid) {
+              send("error", { error: `Code validation failed: ${validation.error}` });
+              controller.close();
+              return;
+            }
+
+            // 4. Execute in Dynamic Worker
+            send("stage", { stage: "executing", detail: "Running in isolated V8 sandbox" });
+            let html: string;
+            let granted: string[] = [];
+            let retried = false;
+            const execStart = Date.now();
+            try {
+              const result = await executeInWorker(env, code, topic);
+              html = result.html;
+              granted = result.granted;
+            } catch (loadError) {
+              retried = true;
+              console.log(`[${runId}] First attempt failed, retrying:`, loadError);
+              const errMsg = loadError instanceof Error ? loadError.message : String(loadError);
+
+              // 4b. Retry
+              send("stage", { stage: "retrying", detail: "First attempt failed, regenerating" });
+              const retryPrompt = `${userPrompt}\n\nYour previous code failed with: ${errMsg}\n\nCommon causes:\n- Using backticks/template literals inside the HTML string (use '+' concatenation instead)\n- Using ES6 classes inside <script> (use plain functions)\n- Syntax errors in nested strings\n- Accessing properties on null API responses (e.g., data.meals[0] when data.meals is null). ALWAYS check: if (data && data.meals && data.meals.length > 0) before accessing.\n- Not handling API fetch failures — ALWAYS wrap fetch in try/catch with a hardcoded fallback.\n\nFix the error and return the corrected module.`;
+
+              const retryStart = Date.now();
+              const retryResult = await callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, retryPrompt);
+              code = sanitizeCode(cleanCode(retryResult.text));
+              timing.retryLlmMs = Date.now() - retryStart;
+
+              validation = validateWorkerCode(code);
+              if (!validation.valid) {
+                send("error", { error: `Retry failed validation: ${validation.error}` });
+                controller.close();
+                return;
+              }
+
+              send("stage", { stage: "executing", detail: "Running retry in V8 sandbox" });
+              try {
+                const retryResult2 = await executeInWorker(env, code, topic);
+                html = retryResult2.html;
+                granted = retryResult2.granted;
+              } catch (retryError) {
+                send("error", { error: `Worker execution failed after retry: ${retryError instanceof Error ? retryError.message : String(retryError)}` });
+                controller.close();
+                return;
+              }
+            }
+            timing.execMs = Date.now() - execStart;
+
+            // 5. Inject base CSS + hero image
+            html = injectBaseCSS(html, BASE_CSS, BASE_SCRIPT);
+            if (heroImage) {
+              html = injectHeroImage(html, heroImage);
+            }
+            timing.totalMs = Date.now() - totalStart;
+
+            // 6. Save to KV for sharing
+            let toolUrl: string | null = null;
+            if (env.TOOLS_KV) {
+              try {
+                await env.TOOLS_KV.put(`tool:${runId}`, html, {
+                  expirationTtl: 86400 * 90,
+                  metadata: { topic, model: llmResult.model, uid, createdAt: new Date().toISOString() },
+                });
+                toolUrl = `/tool/${runId}`;
+              } catch (kvErr) {
+                console.warn(`[${runId}] KV save failed:`, kvErr);
+              }
+            }
+
+            // Extract structured metadata
+            const toolMeta = extractToolMeta(html);
+            if (!toolMeta) {
+              console.warn(`[${runId}] No yukti-meta block found in output`);
+            }
+
+            // Static analysis: extract domains the generated code will fetch
+            const domainsFetched = extractFetchDomains(code);
+
+            trackEvent(env, "generate", {
+              topic, runId, tier, model: llmResult.model, retried,
+              totalMs: timing.totalMs, queryType, granted,
+              warnings: validation.warnings,
+              success: true,
+              toolMeta: toolMeta || null,
+              domainsFetched,
+            });
+
+            send("complete", {
+              ok: true,
+              html,
+              code,
+              runId,
+              toolUrl,
+              meta: {
+                tier,
+                model: llmResult.model,
+                provider: llmResult.provider,
+                retried,
+                timing,
+                granted,
+                queryType,
+                promptVersion: PROMPT_VERSION,
+                domainsFetched,
+                validationWarnings: validation.warnings,
+                runId,
+                toolMeta: toolMeta || null,
+              },
+            });
+          } catch (err) {
+            console.error("YUKTI STREAM ERROR:", err);
+            trackEvent(env, "failure", { topic, error: String(err) });
+            send("error", { error: err instanceof Error ? err.message : String(err) });
+          } finally {
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    }
+
     // ── API: Generate a tool ─────────────────────────────────
     if (url.pathname === "/api/explain" && request.method === "POST") {
       try {
@@ -125,14 +398,27 @@ export default {
           return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 500 });
         }
 
+        // Scope check — reject queries that aren't suited for tool generation
+        const worthiness = isToolWorthy(topic);
+        if (!worthiness.worthy) {
+          return Response.json({
+            ok: false,
+            notToolWorthy: true,
+            reason: worthiness.reason,
+            suggestion: worthiness.suggestion,
+          });
+        }
+
         const runId = generateRunId();
         const timing: Record<string, number> = {};
         const totalStart = Date.now();
 
         // 1. Classify + generate code (+ image in parallel for delight queries)
-        const tier = classifyComplexity(topic);
+        const classification = classifyQuery(topic);
+        const tier = classification.tier;
+        const queryType = classification.queryType;
         const userPrompt = buildUserPrompt(topic);
-        const wantsImage = isDelightQuery(topic) && env.GEMINI_API_KEY;
+        const wantsImage = (queryType === "delight" || isDelightQuery(topic)) && env.GEMINI_API_KEY;
 
         const llmStart = Date.now();
         // Fire LLM and image generation in parallel
@@ -140,7 +426,7 @@ export default {
           callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt),
           wantsImage ? generateGeminiImage(env.GEMINI_API_KEY, topic) : Promise.resolve(null),
         ]);
-        let code = cleanCode(llmResult.text);
+        let code = sanitizeCode(cleanCode(llmResult.text));
         timing.llmMs = Date.now() - llmStart;
         if (heroImage) console.log(`[${runId}] Gemini image generated (${Math.round(heroImage.length / 1024)}KB)`);
 
@@ -173,7 +459,7 @@ export default {
 
           const retryStart = Date.now();
           const retryResult = await callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, retryPrompt);
-          code = cleanCode(retryResult.text);
+          code = sanitizeCode(cleanCode(retryResult.text));
           timing.retryLlmMs = Date.now() - retryStart;
 
           validation = validateWorkerCode(code);
@@ -206,8 +492,8 @@ export default {
         if (env.TOOLS_KV) {
           try {
             await env.TOOLS_KV.put(`tool:${runId}`, html, {
-              expirationTtl: 86400 * 7, // 7 days
-              metadata: { topic, model: llmResult.model, createdAt: new Date().toISOString() },
+              expirationTtl: 86400 * 90, // 90 days
+              metadata: { topic, model: llmResult.model, uid, createdAt: new Date().toISOString() },
             });
             toolUrl = `/tool/${runId}`;
           } catch (kvErr) {
@@ -215,7 +501,23 @@ export default {
           }
         }
 
-        trackEvent(env, "generate", { topic, runId, tier, model: llmResult.model, retried, totalMs: timing.totalMs });
+        // Static analysis: extract domains the generated code will fetch
+        const domainsFetched = extractFetchDomains(code);
+
+        // Extract structured metadata
+        const toolMeta = extractToolMeta(html);
+        if (!toolMeta) {
+          console.warn(`[${runId}] No yukti-meta block found in output`);
+        }
+
+        trackEvent(env, "generate", {
+          topic, runId, tier, model: llmResult.model, retried,
+          totalMs: timing.totalMs, queryType, granted,
+          warnings: validation.warnings,
+          success: true,
+          domainsFetched,
+          toolMeta: toolMeta || null,
+        });
 
         return Response.json({
           ok: true,
@@ -230,6 +532,12 @@ export default {
             retried,
             timing,
             granted,
+            queryType,
+            promptVersion: PROMPT_VERSION,
+            domainsFetched,
+            validationWarnings: validation.warnings,
+            runId,
+            toolMeta: toolMeta || null,
           },
         });
       } catch (err) {
@@ -267,7 +575,7 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
 
         const llmStart = Date.now();
         const llmResult = await callLLM(env.OPENROUTER_API_KEY, "standard", SYSTEM_PROMPT, refinePrompt);
-        let code = cleanCode(llmResult.text);
+        let code = sanitizeCode(cleanCode(llmResult.text));
         const llmTime = Date.now() - llmStart;
 
         const validation = validateWorkerCode(code);
@@ -294,8 +602,8 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
         if (env.TOOLS_KV) {
           try {
             await env.TOOLS_KV.put(`tool:${runId}`, html, {
-              expirationTtl: 86400 * 7,
-              metadata: { topic, instruction, model: llmResult.model, createdAt: new Date().toISOString() },
+              expirationTtl: 86400 * 90,
+              metadata: { topic, instruction, model: llmResult.model, uid, createdAt: new Date().toISOString() },
             });
             toolUrl = `/tool/${runId}`;
           } catch {}
@@ -329,9 +637,14 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
 
       if (env.TOOLS_KV) {
         try {
-          const html = await env.TOOLS_KV.get(`tool:${runId}`);
+          const { value: html, metadata } = await env.TOOLS_KV.getWithMetadata<{ topic?: string }>("tool:" + runId);
           if (html) {
-            return new Response(html, {
+            const topic = metadata?.topic || "Interactive Tool";
+            const ogTags = `<meta property="og:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">\n<meta property="og:description" content="Interactive tool built on the fly by Yukti">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="Yukti">\n<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">`;
+            const footer = `<div style="text-align:center;padding:1.5rem 1rem 1rem;margin-top:2rem;border-top:1px solid rgba(191,176,154,0.2);font-family:'Outfit',system-ui,sans-serif;font-size:0.6875rem;color:#96897a;">Built with <a href="/" style="color:#c2652a;text-decoration:none;font-weight:600;">Yukti</a> — interactive tools, built on the fly</div>`;
+            let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
+            enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");
+            return new Response(enriched, {
               headers: { "Content-Type": "text/html; charset=utf-8" },
             });
           }
@@ -420,8 +733,8 @@ calc();
         if (env.TOOLS_KV) {
           try {
             await env.TOOLS_KV.put(`tool:${runId}`, html, {
-              expirationTtl: 86400 * 7,
-              metadata: { topic, refreshed: true, createdAt: new Date().toISOString() },
+              expirationTtl: 86400 * 90,
+              metadata: { topic, refreshed: true, uid, createdAt: new Date().toISOString() },
             });
             toolUrl = `/tool/${runId}`;
           } catch {}
@@ -437,6 +750,20 @@ calc();
         });
       } catch (err) {
         return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+      }
+    }
+
+    // ── API: Run metadata lookup ────────────────────────────────
+    if (url.pathname.startsWith("/api/run/") && request.method === "GET") {
+      const lookupRunId = url.pathname.slice("/api/run/".length);
+      if (!lookupRunId) return Response.json({ error: "runId required" }, { status: 400 });
+      if (!env.TOOLS_KV) return Response.json({ error: "KV not configured" }, { status: 500 });
+      try {
+        const raw = await env.TOOLS_KV.get(`run:${lookupRunId}`);
+        if (!raw) return Response.json({ error: "Run not found or expired" }, { status: 404 });
+        return Response.json({ runId: lookupRunId, ...JSON.parse(raw) });
+      } catch {
+        return Response.json({ error: "Failed to read run data" }, { status: 500 });
       }
     }
 
@@ -520,6 +847,28 @@ function selectCapabilities(topic: string, hostEnv: Env): { env: Record<string, 
   }
 
   return { env, granted };
+}
+
+/**
+ * Static analysis: extract domains from fetch() calls in generated code.
+ * This gives us immediate observability without waiting for Tail Worker deployment.
+ * Matches fetch('https://domain/...') patterns in the LLM-generated code.
+ */
+function extractFetchDomains(code: string): string[] {
+  const domains: string[] = [];
+  const fetchRegex = /fetch\s*\(\s*['"`]https?:\/\/([^'"`/\s?#]+)/g;
+  let match;
+  while ((match = fetchRegex.exec(code)) !== null) {
+    const domain = match[1].toLowerCase();
+    if (!domains.includes(domain)) domains.push(domain);
+  }
+  // Also match URL construction patterns: new URL('https://domain/...')
+  const urlRegex = /new\s+URL\s*\(\s*['"`]https?:\/\/([^'"`/\s?#]+)/g;
+  while ((match = urlRegex.exec(code)) !== null) {
+    const domain = match[1].toLowerCase();
+    if (!domains.includes(domain)) domains.push(domain);
+  }
+  return domains;
 }
 
 async function executeInWorker(env: Env, code: string, topic?: string): Promise<{ html: string; granted: string[] }> {
@@ -617,6 +966,26 @@ async function trackEvent(
     const counterKey = type === "failure" ? "stats:failures" : type === "refine" ? "stats:refines" : "stats:generations";
     const current = parseInt(await env.TOOLS_KV.get(counterKey) || "0");
     await env.TOOLS_KV.put(counterKey, String(current + 1));
+
+    // Store individual run record with 30-day TTL
+    if (data.runId) {
+      const runRecord = {
+        type,
+        topic: data.topic,
+        model: data.model,
+        tier: data.tier,
+        queryType: data.queryType,
+        timing: data.totalMs ? { totalMs: data.totalMs } : undefined,
+        granted: data.granted,
+        warnings: data.warnings,
+        retried: data.retried,
+        success: data.success ?? (type !== "failure"),
+        createdAt: new Date().toISOString(),
+      };
+      await env.TOOLS_KV.put(`run:${data.runId}`, JSON.stringify(runRecord), {
+        expirationTtl: 86400 * 30, // 30 days
+      });
+    }
 
     // Append to recent queries (keep last 50)
     if (type === "generate" && data.topic) {
