@@ -284,13 +284,8 @@ export const BASE_SCRIPT = `
     initSliders();
   }
   // Re-run after dynamic content changes (e.g. after calc() injects new sliders)
-  var _origInnerHTML=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
-  if(_origInnerHTML&&_origInnerHTML.set){
-    var _origSet=_origInnerHTML.set;
-    Object.defineProperty(Element.prototype,'innerHTML',{
-      set:function(v){_origSet.call(this,v);initSliders();},
-      get:_origInnerHTML.get,configurable:true
-    });
+  if(typeof MutationObserver!=='undefined'){
+    new MutationObserver(function(){initSliders();}).observe(document.body,{childList:true,subtree:true});
   }
 })();
 `.trim();
