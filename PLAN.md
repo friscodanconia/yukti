@@ -3,9 +3,9 @@
 ## P0: Output design quality
 > User rates current CSS 2/10. Output pages look like "white blobs" with no visual hierarchy.
 
-- [ ] Strengthen CSS visual hierarchy (borders, shadows, card depth) in `base-css.ts`
-- [ ] Inject base slider-fill script in `validate.ts` so ALL sliders auto-show fill position
-- [ ] Add slider fill update guidance to `prompt.ts`
+- [x] Strengthen CSS visual hierarchy (borders, shadows, card depth) in `base-css.ts`
+- [x] Inject base slider-fill script in `validate.ts` so ALL sliders auto-show fill position
+- [x] Add slider fill update guidance to `prompt.ts`
 
 ## P1: End-to-end testing
 > Verify core flows on https://yukti.soumyosinha.workers.dev
