@@ -1024,9 +1024,9 @@ function App() {
                 </div>
                 {/* Inspector + Refine bar (desktop only) */}
                 {code && (
-                  <div className="hidden md:block border-t border-[#E7E5E4]">
+                  <div className="hidden md:block border-t-2 border-[#D6D0C4]">
                     {/* Inspector + Refresh bar */}
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-[#F5F4F0]">
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-[#EDE8DF]">
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
@@ -1294,7 +1294,7 @@ function App() {
                     )}
 
                     {/* Refine bar */}
-                    <div className="bg-[#FAFAF8] px-4 py-3">
+                    <div className="bg-[#EDE8DF] px-4 py-3 border-t border-[#D6D0C4]">
                       <div className="max-w-2xl mx-auto flex gap-2">
                         <input
                           type="text"
@@ -1545,138 +1545,74 @@ function App() {
         </div>
       )}
 
-      {/* Onboarding overlay for first-time visitors */}
+      {/* Onboarding overlay for first-time visitors — single screen */}
       {showOnboarding && (
         <div className="onboarding fixed inset-0 z-[200] flex flex-col items-center justify-center">
-          {onboardingStep === 0 && (
-            <div className="text-center px-6 max-w-lg animate-[fadeIn_0.8s_ease]">
-              <h1 className="display text-5xl md:text-7xl leading-tight mb-6"
-                  style={{ fontFamily: "var(--font-display)" }}>
+          <div className="w-full max-w-2xl px-6 animate-[fadeIn_0.8s_ease]">
+            {/* Yukti branding */}
+            <div className="text-center mb-6">
+              <h2 className="display text-4xl md:text-5xl" style={{ fontFamily: "var(--font-display)", color: "var(--color-ink)" }}>
+                <em>Yukti</em>
+              </h2>
+            </div>
+
+            {/* Headline */}
+            <div className="text-center mb-10">
+              <h1 className="display text-5xl md:text-7xl leading-tight mb-4"
+                  style={{ fontFamily: "var(--font-display)", color: "var(--color-ink)" }}>
                 <em>Every question deserves<br/>more than words.</em>
               </h1>
-              <p className="text-lg text-[var(--color-ink-secondary)] mb-10">
-                Not a chatbot answer. A live, interactive tool.
+              <p className="text-xl text-[var(--color-ink-secondary)] max-w-md mx-auto">
+                Ask anything. Get a live, interactive tool — not a chatbot answer.
               </p>
-              <button onClick={() => setOnboardingStep(1)}
-                      className="px-8 py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98]"
+            </div>
+
+            {/* Demo mockup — question -> tool */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-10">
+              {/* Question card */}
+              <div className="bg-white rounded-2xl border border-[#E7E5E4] p-6 shadow-sm">
+                <div className="text-sm font-semibold uppercase tracking-wider text-[var(--color-ink-muted)] mb-3">You ask</div>
+                <p className="text-xl font-medium text-[var(--color-ink)]">"I earn 12L, how much tax?"</p>
+              </div>
+
+              {/* Tool mockup card */}
+              <div className="bg-white rounded-2xl border border-[#E7E5E4] p-6 shadow-sm">
+                <div className="text-sm font-semibold uppercase tracking-wider text-[var(--color-ember)] mb-3">You get</div>
+                <div className="space-y-3">
+                  <div className="bg-[#FFF7ED] rounded-xl p-4 text-center border border-[#FDBA74]">
+                    <div className="text-sm uppercase tracking-wider text-[var(--color-ink-muted)] mb-1">Total Tax</div>
+                    <div className="text-3xl font-bold text-[var(--color-ink)]">&#8377;1,17,000</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#FAFAF8] rounded-lg p-3 text-center border border-[#E7E5E4]">
+                      <div className="text-xs uppercase text-[var(--color-ink-muted)] mb-0.5">Effective Rate</div>
+                      <div className="text-lg font-semibold text-[var(--color-ink)]">9.8%</div>
+                    </div>
+                    <div className="bg-[#FAFAF8] rounded-lg p-3 text-center border border-[#E7E5E4]">
+                      <div className="text-xs uppercase text-[var(--color-ink-muted)] mb-0.5">Monthly</div>
+                      <div className="text-lg font-semibold text-[var(--color-ink)]">&#8377;9,750</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Single CTA — go straight to the app */}
+            <div className="text-center">
+              <p className="text-base text-[var(--color-ink-secondary)] mb-6">
+                Custom-built in seconds using AI + secure sandboxing
+              </p>
+              <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
+                      className="px-10 py-4 text-lg font-semibold rounded-2xl transition-all active:scale-[0.98]"
                       style={{
                         background: 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))',
                         color: 'white',
                         boxShadow: '0 4px 20px var(--color-ember-glow)',
                       }}>
-                Watch &rarr;
-              </button>
-              <div className="mt-6">
-                <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                        className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
-                  Skip intro
-                </button>
-              </div>
-            </div>
-          )}
-
-          {onboardingStep === 1 && (
-            <div className="w-full max-w-2xl px-6 animate-[fadeIn_0.6s_ease]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center" style={{ perspective: '1200px' }}>
-                {/* Question */}
-                <div className="bg-white rounded-2xl border border-[#E7E5E4] p-6 shadow-sm" style={{ transform: 'perspective(1200px) rotateY(-2deg)' }}>
-                  <div className="mono-label mb-3">You ask</div>
-                  <p className="text-lg font-medium text-[var(--color-ink)]">"I earn 12L, how much tax?"</p>
-                </div>
-
-                {/* Tool mockup */}
-                <div className="bg-[#f5ede0] rounded-2xl border border-[#E7E5E4] p-6 shadow-sm" style={{ transform: 'perspective(1200px) rotateY(-2deg)', boxShadow: '0 8px 40px var(--color-ember-glow)' }}>
-                  <div className="mono-label mb-3" style={{ color: 'var(--color-ember)' }}>You get</div>
-                  <div className="space-y-3">
-                    {/* Fake slider */}
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-[#44403C] font-medium">Annual Income</span>
-                        <span className="text-[#C2410C] font-semibold bg-[#FFF7ED] px-2 py-0.5 rounded">&#8377;12,00,000</span>
-                      </div>
-                      <div className="h-2 bg-[#E7E5E4] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#C2410C] rounded-full" style={{ width: "45%", animation: "sliderPulse 3s ease-in-out infinite" }} />
-                      </div>
-                    </div>
-                    {/* Fake output */}
-                    <div className="bg-[#1C1917] rounded-xl p-4 text-center">
-                      <div className="text-[10px] uppercase tracking-wider text-[var(--color-ink-muted)] mb-1">Total Tax</div>
-                      <div className="text-2xl font-bold text-[#FAFAF8]">&#8377;1,17,000</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white rounded-lg p-2 text-center">
-                        <div className="text-[9px] uppercase text-[var(--color-ink-muted)]">Rate</div>
-                        <div className="text-sm font-semibold text-[#1C1917]">9.8%</div>
-                      </div>
-                      <div className="bg-white rounded-lg p-2 text-center">
-                        <div className="text-[9px] uppercase text-[var(--color-ink-muted)]">Monthly</div>
-                        <div className="text-sm font-semibold text-[#1C1917]">&#8377;9,750</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-center text-sm text-[var(--color-ink-secondary)] mt-8 mb-6">
-                Custom-built in seconds using AI + secure sandboxing
-              </p>
-              <div className="text-center">
-                <button onClick={() => { setOnboardingStep(2); if (!query) setQuery("Rent vs buy a flat in Bangalore — show me the math"); }}
-                        className="px-8 py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98]"
-                        style={{
-                          background: 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))',
-                          color: 'white',
-                          boxShadow: '0 4px 20px var(--color-ember-glow)',
-                        }}>
-                  Try it yourself &rarr;
-                </button>
-                <div className="mt-4">
-                  <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                          className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
-                    Skip intro
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {onboardingStep === 2 && (
-            <div className="w-full max-w-lg px-6 text-center animate-[fadeIn_0.6s_ease]">
-              <h2 className="display text-4xl md:text-5xl mb-2" style={{ fontFamily: "var(--font-display)" }}>
-                <em>Your turn.</em>
-              </h2>
-              <p className="text-sm text-[var(--color-ink-secondary)] mb-6">Type anything, or try this one</p>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                localStorage.setItem("yukti-onboarded", "1");
-                setShowOnboarding(false);
-                if (query.trim()) submitQuery(query);
-              }}>
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-                  placeholder="Rent vs buy a flat in Bangalore — show me the math"
-                  rows={2}
-                  className="query-input"
-                  autoFocus
-                />
-                <button type="submit" disabled={!query.trim()}
-                        className="mt-4 w-full py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed"
-                        style={{
-                          background: query.trim() ? 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))' : '#E5E3DF',
-                          color: query.trim() ? 'white' : '#A8A29E',
-                          boxShadow: query.trim() ? '0 4px 20px var(--color-ember-glow)' : 'none',
-                        }}>
-                  Forge it &rarr;
-                </button>
-              </form>
-              <button onClick={() => { localStorage.setItem("yukti-onboarded", "1"); setShowOnboarding(false); }}
-                      className="mt-4 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink-secondary)] transition-colors">
-                Skip intro
+                Try it yourself &rarr;
               </button>
             </div>
-          )}
+          </div>
         </div>
       )}
 
