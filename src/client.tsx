@@ -739,7 +739,7 @@ function App() {
                         type="button"
                         key={q}
                         onClick={() => { setQuery(q); submitQuery(q); }}
-                        className="text-left text-[13px] font-medium text-[var(--color-ink)] leading-snug transition-all group-hover:text-[var(--color-ink-secondary)] hover:!text-[var(--color-ember)] hover:translate-x-1"
+                        className="text-left text-[15px] font-medium text-[var(--color-ink)] leading-snug transition-all group-hover:text-[var(--color-ink-secondary)] hover:!text-[var(--color-ember)] hover:translate-x-1"
                       >
                         {q}
                       </button>

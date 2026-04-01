@@ -496,15 +496,7 @@ html, body {
   overflow: hidden;
 }
 
-/* Subtle texture on sidebar */
-.sidebar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
-  background-size: 128px;
-  pointer-events: none;
-}
+/* Sidebar texture — removed for consistency */
 
 .sidebar__logo {
   font-family: var(--font-display);
@@ -528,8 +520,8 @@ html, body {
 }
 
 .sidebar__tool-item:hover {
-  background: rgba(194, 101, 42, 0.06);
-  border-color: rgba(194, 101, 42, 0.15);
+  background: rgba(194, 101, 42, 0.10);
+  border-color: rgba(194, 101, 42, 0.25);
 }
 
 /* ─── 8. ONBOARDING — Cinematic ─── */
@@ -549,30 +541,7 @@ html, body {
 
 /* Onboarding orbs — removed for clean light background */
 
-.onboarding__orb {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(100px);
-}
-
-.onboarding__orb--1 {
-  width: 350px;
-  height: 350px;
-  background: rgba(255, 180, 100, 0.12);
-  top: 20%;
-  left: 15%;
-  animation: orbFloat1 18s ease-in-out infinite alternate;
-}
-
-.onboarding__orb--2 {
-  width: 280px;
-  height: 280px;
-  background: rgba(194, 65, 12, 0.08);
-  bottom: 25%;
-  right: 20%;
-  animation: orbFloat2 22s ease-in-out infinite alternate;
-}
+/* Onboarding orb elements — removed */
 
 .onboarding__content {
   position: relative;
@@ -611,20 +580,7 @@ html, body {
   opacity: 0;
 }
 
-/* 3D demo mockup tilt */
-.onboarding__demo {
-  perspective: 1200px;
-  transition: transform 0.4s ease;
-}
-
-.onboarding__demo-inner {
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-style: preserve-3d;
-}
-
-.onboarding__demo:hover .onboarding__demo-inner {
-  transform: rotateX(-3deg) rotateY(4deg) scale(1.02);
-}
+/* Onboarding demo — removed (single-screen onboarding) */
 
 /* Step transitions */
 .onboarding__step {
@@ -707,50 +663,7 @@ button:active:not(:disabled) {
   100% { left: 100%; }
 }
 
-/* ─── 10. ONBOARDING BACKGROUND — Animated Orbs ─── */
-
-.gradient-orbs {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.gradient-orbs__orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.6;
-}
-
-.gradient-orbs__orb--warm {
-  width: 300px;
-  height: 300px;
-  background: rgba(194, 65, 12, 0.12);
-  animation: orbDrift 20s ease-in-out infinite alternate;
-}
-
-.gradient-orbs__orb--amber {
-  width: 250px;
-  height: 250px;
-  background: rgba(217, 119, 6, 0.1);
-  animation: orbDrift 25s ease-in-out infinite alternate-reverse;
-}
-
-.gradient-orbs__orb--gold {
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 200, 100, 0.08);
-  animation: orbDrift 18s ease-in-out infinite alternate;
-}
-
-@keyframes orbDrift {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(30px, -40px); }
-  50% { transform: translate(-20px, 30px); }
-  75% { transform: translate(40px, 10px); }
-  100% { transform: translate(-10px, -20px); }
-}
+/* Gradient orbs — removed */
 
 /* ─── Responsive ─── */
 
