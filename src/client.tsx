@@ -126,29 +126,75 @@ const STAGE_MAP: Record<string, { label: string; detail: string; story: string[]
 
 const STAGE_ORDER = ["classifying", "generating", "validating", "executing"];
 
-function BuildingPipeline({ currentStage, onBackground }: { currentStage: string | null; onBackground?: () => void }) {
+function BuildingPipeline({ currentStage, onBackground, query }: { currentStage: string | null; onBackground?: () => void; query?: string }) {
   const [elapsed, setElapsed] = useState(0);
   const [showNotifyBtn, setShowNotifyBtn] = useState(false);
-  const [stageHistory, setStageHistory] = useState<string[]>([]);
-  const [storyIdx, setStoryIdx] = useState(0);
+  const [revealedLines, setRevealedLines] = useState<string[]>([]);
+  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const prevStageRef = useRef<string | null>(null);
 
-  // Track stages as they arrive to build the visible list
+  // Narrative lines for each stage — revealed sequentially, never repeated
+  const NARRATIVE: Record<string, { lines: string[]; caps?: string[] }> = {
+    classifying: {
+      lines: [
+        "Reading your question...",
+        "Deciding what kind of tool to build",
+      ],
+      caps: ["intent analysis", "complexity scoring"],
+    },
+    generating: {
+      lines: [
+        "Writing custom code for this",
+        "Adding interactive controls",
+        "Connecting to live data sources",
+      ],
+      caps: ["sliders & inputs", "charts & tables", "live API calls", "responsive layout"],
+    },
+    validating: {
+      lines: [
+        "Checking the code is safe to run",
+      ],
+      caps: ["sandbox security", "injection scan"],
+    },
+    executing: {
+      lines: [
+        "Spinning up an isolated V8 environment",
+        "Fetching live data...",
+        "Almost there",
+      ],
+      caps: ["isolated runtime", "network fetch"],
+    },
+    retrying: {
+      lines: [
+        "First attempt had an issue",
+        "Regenerating a better version",
+      ],
+    },
+  };
+
+  // When stage changes, queue up the new narrative lines one by one
   useEffect(() => {
-    if (currentStage) {
-      setStageHistory(prev => prev.includes(currentStage) ? prev : [...prev, currentStage]);
-      setStoryIdx(0); // reset story rotation when stage changes
+    if (!currentStage || currentStage === prevStageRef.current) return;
+    prevStageRef.current = currentStage;
+
+    const stageNarrative = NARRATIVE[currentStage];
+    if (!stageNarrative) return;
+
+    // Reveal lines with staggered delay
+    stageNarrative.lines.forEach((line, i) => {
+      setTimeout(() => {
+        setRevealedLines(prev => [...prev, line]);
+      }, i * 2000);
+    });
+
+    // Reveal capability pills with stagger
+    if (stageNarrative.caps) {
+      stageNarrative.caps.forEach((cap, i) => {
+        setTimeout(() => {
+          setCapabilities(prev => prev.includes(cap) ? prev : [...prev, cap]);
+        }, 800 + i * 600);
+      });
     }
-  }, [currentStage]);
-
-  // Rotate through story micro-copy for the active stage
-  useEffect(() => {
-    if (!currentStage) return;
-    const storyLines = STAGE_MAP[currentStage]?.story || [];
-    if (storyLines.length <= 1) return;
-    const timer = setInterval(() => {
-      setStoryIdx(prev => (prev + 1) % storyLines.length);
-    }, 2500);
-    return () => clearInterval(timer);
   }, [currentStage]);
 
   useEffect(() => {
@@ -157,26 +203,10 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
     return () => clearInterval(timer);
   }, []);
 
-  // Show "notify me" button after 15 seconds
   useEffect(() => {
     const t = setTimeout(() => setShowNotifyBtn(true), 15000);
     return () => clearTimeout(t);
   }, []);
-
-  // Build the display list: use STAGE_ORDER as base, insert "retrying" if it appeared
-  const displayStages = (() => {
-    const stages = [...STAGE_ORDER];
-    if (stageHistory.includes("retrying")) {
-      const execIdx = stages.indexOf("executing");
-      if (execIdx !== -1) {
-        stages.splice(execIdx + 1, 0, "retrying");
-      }
-    }
-    return stages;
-  })();
-
-  // Determine current stage index in displayStages
-  const currentIdx = currentStage ? displayStages.indexOf(currentStage) : -1;
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
@@ -186,105 +216,77 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm mx-auto">
-        {/* Timer pill */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#1C1917]" style={{ border: '1px solid rgba(194,65,12,0.3)' }}>
-            <div className="w-2.5 h-2.5 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
-            <span className="text-sm font-semibold" style={{ color: 'var(--color-ember)' }}>Forging</span>
-            <span className="forge-timer" style={{ minWidth: "3ch" }}>{formatTime(elapsed)}</span>
+      <div className="w-full max-w-md mx-auto">
+
+        {/* User's query — anchored at top */}
+        {query && (
+          <div className="text-center mb-8" style={{ animation: 'fadeIn 0.6s ease' }}>
+            <div className="text-xs uppercase tracking-widest text-[var(--color-ink-muted)] mb-2 font-semibold">Building a tool for</div>
+            <div className="text-lg font-semibold text-[var(--color-ink)] leading-snug">"{query}"</div>
           </div>
+        )}
+
+        {/* Narrative — lines appear one by one, Kimi-style */}
+        <div className="space-y-3 mb-8 min-h-[120px]">
+          {revealedLines.map((line, i) => {
+            const isLatest = i === revealedLines.length - 1;
+            return (
+              <div
+                key={line + i}
+                className={`flex items-start gap-3 transition-opacity duration-500 ${isLatest ? "opacity-100" : "opacity-40"}`}
+                style={{ animation: 'narrativeReveal 0.6s cubic-bezier(0.22,1,0.36,1)' }}
+              >
+                {isLatest ? (
+                  <div className="mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 glow-pulse" style={{ background: 'var(--color-ember)' }} />
+                ) : (
+                  <div className="mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#166534]" />
+                )}
+                <span className={`text-lg ${isLatest ? "text-[var(--color-ink)] font-medium" : "text-[var(--color-ink-muted)]"}`}>
+                  {line}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Vertical timeline */}
-        <div className="relative pl-8">
-          {/* Connecting vertical line */}
-          <div className="absolute left-[11px] top-3 bottom-3 w-[3px] rounded-full overflow-hidden bg-[#E7E5E4]">
-            <div
-              className="w-full rounded-full transition-all duration-700 ease-out"
-              style={{
-                height: `${((Math.max(0, currentIdx) + 1) / displayStages.length) * 100}%`,
-                background: 'linear-gradient(180deg, #166534, var(--color-ember))',
-              }}
-            />
+        {/* Capability pills — fly in one by one like Kimi agent badges */}
+        {capabilities.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8 justify-center">
+            {capabilities.map((cap) => (
+              <span
+                key={cap}
+                className="px-3 py-1.5 text-xs font-semibold rounded-full border"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-ink-secondary)',
+                  animation: 'pillReveal 0.4s cubic-bezier(0.22,1,0.36,1)',
+                }}
+              >
+                {cap}
+              </span>
+            ))}
           </div>
+        )}
 
-          <div className="space-y-2">
-            {displayStages.map((stageKey, i) => {
-              const info = STAGE_MAP[stageKey] || { label: stageKey, detail: "", story: [] };
-              const status = i < currentIdx ? "done" : i === currentIdx ? "active" : "waiting";
-              const activeStory = status === "active" && info.story.length > 0
-                ? info.story[storyIdx % info.story.length]
-                : info.detail;
-              return (
-                <div
-                  key={stageKey + i}
-                  className={`relative rounded-xl px-4 transition-all duration-500 ${
-                    status === "active"
-                      ? "bg-[#FFF7ED] border border-[#FDBA74] py-4"
-                      : status === "done"
-                      ? "bg-transparent py-3"
-                      : "bg-transparent opacity-50 py-3"
-                  }`}
-                  style={{
-                    animation: status === "active" ? "fadeIn 0.4s cubic-bezier(0.22,1,0.36,1)" : undefined,
-                  }}
-                >
-                  {/* Circle icon — positioned on the vertical line */}
-                  <div className="absolute -left-8 top-3.5 flex items-center justify-center">
-                    {status === "done" ? (
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#166534]" style={{ animation: 'fadeIn 0.3s ease' }}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    ) : status === "active" ? (
-                      <div className="w-6 h-6 rounded-full border-[2.5px] flex items-center justify-center" style={{ borderColor: 'var(--color-ember)', background: 'white' }}>
-                        <div className="w-2.5 h-2.5 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-[#D6D3D1] bg-white" />
-                    )}
-                  </div>
-
-                  {/* Label */}
-                  <div className={`font-semibold transition-colors duration-300 ${
-                    status === "done" ? "text-[#166534] text-sm" :
-                    status === "active" ? "text-[var(--color-ink)] text-base" :
-                    "text-[var(--color-ink-muted)] text-sm"
-                  }`}>
-                    {info.label}
-                  </div>
-                  {/* Rotating story text for active stage */}
-                  {status === "active" && activeStory && (
-                    <div
-                      key={activeStory}
-                      className="text-sm text-[var(--color-ink-secondary)] mt-1.5 italic"
-                      style={{ animation: 'storyFade 0.5s ease' }}
-                    >
-                      {activeStory}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        {/* Minimal progress — timer + thin bar */}
+        <div className="text-center mb-4">
+          <span className="forge-timer text-sm" style={{ color: 'var(--color-ember)' }}>{formatTime(elapsed)}</span>
         </div>
-
-        {/* Progress bar */}
-        <div className="mt-8 h-2 rounded-full overflow-hidden bg-[rgba(194,65,12,0.1)]">
+        <div className="h-1.5 rounded-full overflow-hidden bg-[rgba(194,65,12,0.08)]">
           <div
-            className="h-full rounded-full transition-all duration-700 ease-out"
+            className="h-full rounded-full"
             style={{
-              width: `${((Math.max(0, currentIdx) + 1) / displayStages.length) * 100}%`,
-              background: "linear-gradient(90deg, var(--color-ember), var(--color-ember-deep))",
+              width: '100%',
+              background: 'linear-gradient(90deg, var(--color-ember), var(--color-ember-deep))',
+              animation: 'progressPulse 2s ease-in-out infinite',
             }}
           />
         </div>
 
         {/* Background button — appears after 15s */}
         {showNotifyBtn && onBackground && (
-          <div className="mt-8 text-center animate-[fadeIn_0.5s_ease]">
+          <div className="mt-8 text-center" style={{ animation: 'fadeIn 0.5s ease' }}>
             <button
               type="button"
               onClick={onBackground}
@@ -294,7 +296,7 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
                 <path d="M7 1v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
               </svg>
-              Take me back — notify when ready
+              Go back — I'll check later
             </button>
           </div>
         )}
@@ -1031,7 +1033,7 @@ function App() {
 
           {/* Right panel — output */}
           <div className="flex-1 bg-white flex flex-col min-h-[50vh] md:h-screen">
-            {loading && !refining && <BuildingPipeline currentStage={streamStage} onBackground={handleBackground} />}
+            {loading && !refining && <BuildingPipeline currentStage={streamStage} onBackground={handleBackground} query={query} />}
             {fallback && !loading && (
               <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
                 <div className="max-w-sm">
@@ -1710,9 +1712,18 @@ function App() {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes storyFade {
-          0% { opacity: 0; transform: translateY(4px); }
-          100% { opacity: 1; transform: translateY(0); }
+        @keyframes narrativeReveal {
+          0% { opacity: 0; transform: translateX(-12px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pillReveal {
+          0% { opacity: 0; transform: scale(0.8) translateY(4px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes progressPulse {
+          0% { opacity: 0.4; transform: scaleX(0.3); transform-origin: left; }
+          50% { opacity: 1; transform: scaleX(0.7); transform-origin: left; }
+          100% { opacity: 0.4; transform: scaleX(0.3); transform-origin: left; }
         }
       `}</style>
     </div>
