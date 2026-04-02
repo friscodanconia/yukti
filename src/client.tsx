@@ -633,22 +633,23 @@ function App() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
                   placeholder="How much tax on a 12 lakh salary?"
                   rows={2}
-                  className="query-input"
+                  className="query-input pr-14"
                   autoFocus
                 />
+                <button
+                  type="submit"
+                  disabled={!query.trim()}
+                  className="absolute right-3 bottom-3 w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-[0.92] disabled:opacity-20 disabled:cursor-not-allowed"
+                  style={{
+                    background: query.trim() ? 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))' : '#E5E3DF',
+                    boxShadow: query.trim() ? '0 2px 8px var(--color-ember-glow)' : 'none',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 14V4M9 4L4 9M9 4L14 9" stroke={query.trim() ? "white" : "#A8A29E"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={!query.trim()}
-                className="mt-4 w-full py-3.5 text-base font-semibold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed"
-                style={{
-                  background: query.trim() ? 'linear-gradient(135deg, var(--color-ember), var(--color-ember-deep))' : '#E5E3DF',
-                  color: query.trim() ? 'white' : '#A8A29E',
-                  boxShadow: query.trim() ? '0 4px 20px var(--color-ember-glow), 0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                }}
-              >
-                Build
-              </button>
             </form>
 
             {/* Clarification UI */}
