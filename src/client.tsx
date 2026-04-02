@@ -77,12 +77,51 @@ function removeTool(runId: string) {
   localStorage.setItem("yukti-tools", JSON.stringify(tools));
 }
 
-const STAGE_MAP: Record<string, { label: string; detail: string }> = {
-  classifying: { label: "Understanding your question", detail: "Analyzing intent and complexity" },
-  generating: { label: "Crafting your interactive tool", detail: "Generating a custom Worker module" },
-  validating: { label: "Checking code safety", detail: "Validating structure and scanning for issues" },
-  executing: { label: "Running in V8 sandbox", detail: "Fetching live data and building the page" },
-  retrying: { label: "Fixing and retrying", detail: "First attempt had an issue, regenerating" },
+const STAGE_MAP: Record<string, { label: string; detail: string; story: string[] }> = {
+  classifying: {
+    label: "Understanding your question",
+    detail: "Analyzing intent and complexity",
+    story: [
+      "Reading between the lines...",
+      "Figuring out what kind of tool you need",
+      "Choosing from 40+ live APIs",
+    ],
+  },
+  generating: {
+    label: "Crafting your interactive tool",
+    detail: "Generating a custom Worker module",
+    story: [
+      "Writing the code for your tool...",
+      "Adding sliders, inputs, and charts",
+      "Making it interactive and responsive",
+      "Wiring up live data connections",
+    ],
+  },
+  validating: {
+    label: "Checking code safety",
+    detail: "Validating structure and scanning for issues",
+    story: [
+      "Scanning for security issues...",
+      "Ensuring the code is sandboxed",
+    ],
+  },
+  executing: {
+    label: "Running in V8 sandbox",
+    detail: "Fetching live data and building the page",
+    story: [
+      "Spinning up an isolated environment...",
+      "Fetching live data from APIs",
+      "Rendering your interactive tool",
+    ],
+  },
+  retrying: {
+    label: "Fixing and retrying",
+    detail: "First attempt had an issue, regenerating",
+    story: [
+      "Something didn't look right...",
+      "Adjusting and regenerating",
+    ],
+  },
 };
 
 const STAGE_ORDER = ["classifying", "generating", "validating", "executing"];
@@ -91,12 +130,25 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
   const [elapsed, setElapsed] = useState(0);
   const [showNotifyBtn, setShowNotifyBtn] = useState(false);
   const [stageHistory, setStageHistory] = useState<string[]>([]);
+  const [storyIdx, setStoryIdx] = useState(0);
 
   // Track stages as they arrive to build the visible list
   useEffect(() => {
     if (currentStage) {
       setStageHistory(prev => prev.includes(currentStage) ? prev : [...prev, currentStage]);
+      setStoryIdx(0); // reset story rotation when stage changes
     }
+  }, [currentStage]);
+
+  // Rotate through story micro-copy for the active stage
+  useEffect(() => {
+    if (!currentStage) return;
+    const storyLines = STAGE_MAP[currentStage]?.story || [];
+    if (storyLines.length <= 1) return;
+    const timer = setInterval(() => {
+      setStoryIdx(prev => (prev + 1) % storyLines.length);
+    }, 2500);
+    return () => clearInterval(timer);
   }, [currentStage]);
 
   useEffect(() => {
@@ -159,23 +211,29 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
 
           <div className="space-y-2">
             {displayStages.map((stageKey, i) => {
-              const info = STAGE_MAP[stageKey] || { label: stageKey, detail: "" };
+              const info = STAGE_MAP[stageKey] || { label: stageKey, detail: "", story: [] };
               const status = i < currentIdx ? "done" : i === currentIdx ? "active" : "waiting";
+              const activeStory = status === "active" && info.story.length > 0
+                ? info.story[storyIdx % info.story.length]
+                : info.detail;
               return (
                 <div
                   key={stageKey + i}
-                  className={`relative rounded-xl px-4 py-3 transition-all duration-300 ${
+                  className={`relative rounded-xl px-4 transition-all duration-500 ${
                     status === "active"
-                      ? "bg-[#FFF7ED] border border-[#FDBA74]"
+                      ? "bg-[#FFF7ED] border border-[#FDBA74] py-4"
                       : status === "done"
-                      ? "bg-transparent"
-                      : "bg-transparent opacity-60"
+                      ? "bg-transparent py-3"
+                      : "bg-transparent opacity-50 py-3"
                   }`}
+                  style={{
+                    animation: status === "active" ? "fadeIn 0.4s cubic-bezier(0.22,1,0.36,1)" : undefined,
+                  }}
                 >
                   {/* Circle icon — positioned on the vertical line */}
-                  <div className="absolute -left-8 top-3 flex items-center justify-center">
+                  <div className="absolute -left-8 top-3.5 flex items-center justify-center">
                     {status === "done" ? (
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#166534]">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#166534]" style={{ animation: 'fadeIn 0.3s ease' }}>
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                           <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
@@ -189,7 +247,7 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
                     )}
                   </div>
 
-                  {/* Label + detail */}
+                  {/* Label */}
                   <div className={`font-semibold transition-colors duration-300 ${
                     status === "done" ? "text-[#166534] text-sm" :
                     status === "active" ? "text-[var(--color-ink)] text-base" :
@@ -197,9 +255,14 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
                   }`}>
                     {info.label}
                   </div>
-                  {status === "active" && info.detail && (
-                    <div className="text-sm text-[var(--color-ink-secondary)] mt-1 animate-[fadeIn_0.3s_ease]">
-                      {info.detail}
+                  {/* Rotating story text for active stage */}
+                  {status === "active" && activeStory && (
+                    <div
+                      key={activeStory}
+                      className="text-sm text-[var(--color-ink-secondary)] mt-1.5 italic"
+                      style={{ animation: 'storyFade 0.5s ease' }}
+                    >
+                      {activeStory}
                     </div>
                   )}
                 </div>
@@ -1646,6 +1709,10 @@ function App() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes storyFade {
+          0% { opacity: 0; transform: translateY(4px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
