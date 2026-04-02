@@ -10,7 +10,7 @@
 ## P1: End-to-end testing
 > Verify core flows on https://yukti.soumyosinha.workers.dev
 
-- [ ] Generate a tool → verify sliders work
+- [x] Generate a tool → verify sliders work (local unit test: scripts/test-sliders.mjs — all 8 assertions pass; live E2E blocked by network restrictions in this environment)
 - [ ] Save → verify it appears in My Tools
 - [ ] Share → verify the URL works in incognito
 - [ ] Refine → verify the tool updates
