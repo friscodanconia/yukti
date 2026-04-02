@@ -134,82 +134,98 @@ function BuildingPipeline({ currentStage, onBackground }: { currentStage: string
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
-      <div className="forge">
-        {/* Timer — mechanical feel */}
+      <div className="w-full max-w-sm mx-auto">
+        {/* Timer pill */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl" style={{ background: 'var(--color-forge, #1C1917)', border: '1px solid rgba(194,65,12,0.3)' }}>
+          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#1C1917]" style={{ border: '1px solid rgba(194,65,12,0.3)' }}>
             <div className="w-2.5 h-2.5 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--color-ember)' }}>Forging</span>
             <span className="forge-timer" style={{ minWidth: "3ch" }}>{formatTime(elapsed)}</span>
           </div>
         </div>
 
-        {/* Phase list */}
-        <div className="space-y-1">
-          {displayStages.map((stageKey, i) => {
-            const info = STAGE_MAP[stageKey] || { label: stageKey, detail: "" };
-            const status = i < currentIdx ? "done" : i === currentIdx ? "active" : "waiting";
-            return (
-              <div
-                key={stageKey + i}
-                className={`forge-step forge-step--${status}`}
-              >
-                {/* Status indicator */}
-                <div className="mt-0.5 flex-shrink-0">
-                  {status === "done" ? (
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-ember)' }}>
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5L4 7L8 3" stroke="#FAFAFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  ) : status === "active" ? (
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--color-ember)' }}>
-                      <div className="w-2 h-2 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
-                    </div>
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-[#3A3530]" />
-                  )}
-                </div>
+        {/* Vertical timeline */}
+        <div className="relative pl-8">
+          {/* Connecting vertical line */}
+          <div className="absolute left-[11px] top-3 bottom-3 w-[3px] rounded-full overflow-hidden bg-[#E7E5E4]">
+            <div
+              className="w-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                height: `${((Math.max(0, currentIdx) + 1) / displayStages.length) * 100}%`,
+                background: 'linear-gradient(180deg, #166534, var(--color-ember))',
+              }}
+            />
+          </div>
 
-                {/* Label + detail */}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium transition-colors duration-300 ${
-                    status === "done" ? "text-[var(--color-ember)]" :
-                    status === "active" ? "text-[var(--color-ink)]" :
-                    "text-[#57534E]"
+          <div className="space-y-2">
+            {displayStages.map((stageKey, i) => {
+              const info = STAGE_MAP[stageKey] || { label: stageKey, detail: "" };
+              const status = i < currentIdx ? "done" : i === currentIdx ? "active" : "waiting";
+              return (
+                <div
+                  key={stageKey + i}
+                  className={`relative rounded-xl px-4 py-3 transition-all duration-300 ${
+                    status === "active"
+                      ? "bg-[#FFF7ED] border border-[#FDBA74]"
+                      : status === "done"
+                      ? "bg-transparent"
+                      : "bg-transparent opacity-60"
+                  }`}
+                >
+                  {/* Circle icon — positioned on the vertical line */}
+                  <div className="absolute -left-8 top-3 flex items-center justify-center">
+                    {status === "done" ? (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#166534]">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    ) : status === "active" ? (
+                      <div className="w-6 h-6 rounded-full border-[2.5px] flex items-center justify-center" style={{ borderColor: 'var(--color-ember)', background: 'white' }}>
+                        <div className="w-2.5 h-2.5 rounded-full glow-pulse" style={{ background: 'var(--color-ember)' }} />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full border-2 border-[#D6D3D1] bg-white" />
+                    )}
+                  </div>
+
+                  {/* Label + detail */}
+                  <div className={`font-semibold transition-colors duration-300 ${
+                    status === "done" ? "text-[#166534] text-sm" :
+                    status === "active" ? "text-[var(--color-ink)] text-base" :
+                    "text-[var(--color-ink-muted)] text-sm"
                   }`}>
                     {info.label}
                   </div>
-                  {status === "active" && (
-                    <div className="text-xs text-[var(--color-ink-muted)] mt-0.5 animate-[fadeIn_0.3s_ease]">
+                  {status === "active" && info.detail && (
+                    <div className="text-sm text-[var(--color-ink-secondary)] mt-1 animate-[fadeIn_0.3s_ease]">
                       {info.detail}
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* Progress bar */}
-        <div className="mt-6 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(194,65,12,0.1)' }}>
+        <div className="mt-8 h-2 rounded-full overflow-hidden bg-[rgba(194,65,12,0.1)]">
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
               width: `${((Math.max(0, currentIdx) + 1) / displayStages.length) * 100}%`,
               background: "linear-gradient(90deg, var(--color-ember), var(--color-ember-deep))",
-              boxShadow: '0 0 12px var(--color-ember-glow)',
             }}
           />
         </div>
 
-        {/* Notify me button — appears after 15s */}
+        {/* Background button — appears after 15s */}
         {showNotifyBtn && onBackground && (
           <div className="mt-8 text-center animate-[fadeIn_0.5s_ease]">
             <button
               type="button"
               onClick={onBackground}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] border border-[#3A3530] hover:border-[var(--color-ember)] rounded-lg transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] border border-[#D6D3D1] hover:border-[var(--color-ember)] rounded-xl transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 1v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
