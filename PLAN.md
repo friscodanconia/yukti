@@ -12,7 +12,7 @@
 
 - [x] Generate a tool → verify sliders work (local unit test: scripts/test-sliders.mjs — all 8 assertions pass; live E2E blocked by network restrictions in this environment)
 - [x] Save → verify it appears in My Tools (unit tests in scripts/test-save-flow.mjs — all 17 assertions pass; live E2E blocked by network restrictions)
-- [ ] Share → verify the URL works in incognito
+- [x] Share → verify the URL works in incognito (unit tests in scripts/test-share-flow.mjs — all 18 assertions pass; live E2E blocked by network restrictions)
 - [ ] Refine → verify the tool updates
 - [ ] Refresh → verify live data updates
 - [ ] Fork from My Tools → verify regeneration
