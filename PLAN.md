@@ -16,7 +16,7 @@
 - [x] Refine → verify the tool updates (unit tests in scripts/test-refine-flow.mjs — all 20 assertions pass; live E2E blocked by network restrictions)
 - [x] Refresh → verify live data updates (unit tests in scripts/test-refresh-flow.mjs — all 20 assertions pass; live E2E blocked by network restrictions)
 - [x] Fork from My Tools → verify regeneration (unit tests in scripts/test-fork-flow.mjs — all 21 assertions pass; live E2E blocked by network restrictions)
-- [ ] Mobile (390px) — layout, back button, save/share
+- [x] Mobile (390px) — layout, back button, save/share (unit tests in scripts/test-mobile-layout.mjs — all 19 assertions pass; live E2E blocked by network restrictions)
 
 ## P2: Recurring bugs
 

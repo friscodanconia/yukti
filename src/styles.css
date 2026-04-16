@@ -670,7 +670,8 @@ button:active:not(:disabled) {
 @media (max-width: 768px) {
   .tool-stage-wrapper {
     padding: 0.75rem;
-    padding-bottom: 1rem;
+    /* 4.5rem ≈ 72px — enough to clear the 64px fixed mobile bottom action bar */
+    padding-bottom: 4.5rem;
   }
   .tool-stage {
     border-radius: 16px;
@@ -684,6 +685,16 @@ button:active:not(:disabled) {
   .query-input {
     padding: 1rem 1.25rem;
     font-size: 1rem;
+  }
+}
+
+/* Safe-area padding for notched phones (iPhone X+, Android) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

@@ -857,7 +857,7 @@ function App() {
                       <button
                         type="button"
                         onClick={() => { setQuery(tool.query); generate(tool.query); }}
-                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"
                         title="Regenerate with same query"
                       >
                         Fork
@@ -869,9 +869,9 @@ function App() {
                           const btn = e.currentTarget;
                           btn.textContent = "\u2713 Copied!";
                           btn.className = "text-[var(--color-ember)] bg-[#FFF7ED] rounded px-1 transition-colors text-xs";
-                          setTimeout(() => { btn.textContent = "Share"; btn.className = "text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"; }, 2000);
+                          setTimeout(() => { btn.textContent = "Share"; btn.className = "text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"; }, 2000);
                         }}
-                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"
                         title="Copy share link"
                       >
                         Share
@@ -879,7 +879,7 @@ function App() {
                       <button
                         type="button"
                         onClick={() => handleRemoveTool(tool.runId)}
-                        className="text-[var(--color-ink-muted)] hover:text-[#DC2626] transition-colors text-xs opacity-0 group-hover:opacity-100"
+                        className="text-[var(--color-ink-muted)] hover:text-[#DC2626] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"
                         title="Remove"
                       >
                         Remove
@@ -1016,7 +1016,7 @@ function App() {
           {/* Mobile header — compact, with back arrow */}
           <div className="md:hidden sticky top-0 z-50 border-b border-[#E7E5E4] bg-white/95 backdrop-blur-sm">
             <div className="flex items-center px-3 py-2.5">
-              <button type="button" onClick={resetToHome} className="p-1 -ml-1 text-[#78716C] hover:text-[#1C1917] transition-colors">
+              <button type="button" onClick={resetToHome} className="p-2 -ml-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#78716C] hover:text-[#1C1917] transition-colors">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
               <div className="flex-1 text-center">
