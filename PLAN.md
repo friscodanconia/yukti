@@ -20,7 +20,7 @@
 
 ## P2: Recurring bugs
 
-- [ ] Backtick nesting: improve `fixNestedBackticks()` or add a more robust parser
+- [x] Backtick nesting: rewrote `fixNestedBackticks()` as a proper state-machine parser — targets only `<script>` sections, preserves outer `${...}` expressions, handles multiple template literals; all 15 unit tests pass (scripts/test-backtick-fix.mjs)
 - [ ] Analytics counters not incrementing in KV
 - [ ] Some queries produce static (non-interactive) output despite prompt instructions
 

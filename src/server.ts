@@ -907,14 +907,11 @@ function cleanCode(raw: string): string {
   }
 
   // Fix nested backtick issue: if there are more than 2 backticks,
-  // the LLM used template literals inside the HTML string.
-  // Convert the code to use a different approach: replace the outer
-  // template literal with string concatenation.
+  // the LLM used template literals inside the HTML string's <script> sections.
+  // The parser targets only those sections, leaving outer ${...} expressions intact.
   const backtickCount = (code.match(/`/g) || []).length;
   if (backtickCount > 2) {
     console.warn(`[cleanCode] Found ${backtickCount} backticks — attempting fix`);
-    // Strategy: find the HTML template literal and convert inner backticks
-    // to escaped backticks or single quotes
     code = fixNestedBackticks(code);
   }
 
@@ -922,28 +919,186 @@ function cleanCode(raw: string): string {
 }
 
 function fixNestedBackticks(code: string): string {
-  // Find the main template literal: const html = `...`;
-  // Everything between the first ` after "= " and the matching closing `
-  // is the HTML string. Any backticks inside <script> tags within it are errors.
+  // Scan code character-by-character, properly handling strings and template
+  // literals. For each template literal that contains <script> sections, fix
+  // any bad nested backticks within those sections by converting them to
+  // single-quoted strings. Legitimate ${...} expressions in the outer template
+  // are preserved unchanged.
+  let result = '';
+  let i = 0;
 
-  const firstBacktick = code.indexOf('`');
-  if (firstBacktick === -1) return code;
+  while (i < code.length) {
+    const c = code[i];
 
-  const lastBacktick = code.lastIndexOf('`');
-  if (lastBacktick === firstBacktick) return code;
+    if (c === '\\') {
+      result += c + (code[i + 1] || '');
+      i += 2;
+      continue;
+    }
 
-  // Extract the content between the outer backticks
-  const before = code.slice(0, firstBacktick);
-  const inner = code.slice(firstBacktick + 1, lastBacktick);
-  const after = code.slice(lastBacktick + 1);
+    if (c === "'" || c === '"') {
+      const end = scanPastString(code, i);
+      result += code.slice(i, end);
+      i = end;
+      continue;
+    }
 
-  // Replace any remaining backticks in the inner content with single quotes
-  // and ${...} template expressions with string concatenation
-  let fixed = inner
-    .replace(/`/g, "'")
-    .replace(/\$\{([^}]+)\}/g, "' + ($1) + '");
+    if (c === '`') {
+      const { text, end } = processTemplateLiteral(code, i);
+      result += text;
+      i = end;
+      continue;
+    }
 
-  return before + '`' + fixed + '`' + after;
+    result += c;
+    i++;
+  }
+
+  return result;
+}
+
+function scanPastString(code: string, start: number): number {
+  const q = code[start];
+  let i = start + 1;
+  while (i < code.length) {
+    if (code[i] === '\\') { i += 2; continue; }
+    if (code[i] === q) { i++; break; }
+    i++;
+  }
+  return i;
+}
+
+function processTemplateLiteral(code: string, start: number): { text: string; end: number } {
+  // Parse a template literal starting at start (code[start] === '`').
+  // Track <script> depth to detect bad nested backticks inside script sections.
+  // Bad backticks are converted to single-quoted strings via fixBadTemplate.
+  let content = '';
+  let i = start + 1;
+  let exprDepth = 0;
+  let scriptDepth = 0;
+
+  while (i < code.length) {
+    const c = code[i];
+
+    if (c === '\\') {
+      content += c + (code[i + 1] || '');
+      i += 2;
+      continue;
+    }
+
+    if (exprDepth > 0) {
+      // Inside ${...}: track braces and handle nested strings/templates
+      if (c === '{') {
+        exprDepth++;
+        content += c;
+      } else if (c === '}') {
+        exprDepth--;
+        content += c;
+      } else if (c === '`') {
+        const { text, end } = processTemplateLiteral(code, i);
+        content += text;
+        i = end;
+        continue;
+      } else if (c === "'" || c === '"') {
+        const end = scanPastString(code, i);
+        content += code.slice(i, end);
+        i = end;
+        continue;
+      } else {
+        content += c;
+      }
+      i++;
+      continue;
+    }
+
+    // Template text (exprDepth === 0)
+    if (c === '$' && code[i + 1] === '{') {
+      content += '${';
+      i += 2;
+      exprDepth = 1;
+      continue;
+    }
+
+    if (c === '`') {
+      if (scriptDepth > 0) {
+        // Bad nested backtick inside a <script> section — convert to single-quoted string
+        const { fixedStr, end } = fixBadTemplate(code, i);
+        content += fixedStr;
+        i = end;
+        continue;
+      }
+      // Real closing backtick of this template literal
+      return { text: '`' + content + '`', end: i + 1 };
+    }
+
+    // Track <script> / </script> sections so we know when we're in browser JS
+    if (c === '<') {
+      const tail = code.slice(i);
+      const openMatch = tail.match(/^<script(?:\s[^>]*)?\s*>/i);
+      if (openMatch) {
+        scriptDepth++;
+        content += openMatch[0];
+        i += openMatch[0].length;
+        continue;
+      }
+      const closeMatch = tail.match(/^<\/script\s*>/i);
+      if (closeMatch) {
+        scriptDepth = Math.max(0, scriptDepth - 1);
+        content += closeMatch[0];
+        i += closeMatch[0].length;
+        continue;
+      }
+    }
+
+    content += c;
+    i++;
+  }
+
+  // Unclosed template literal — return as-is
+  return { text: '`' + content, end: i };
+}
+
+function fixBadTemplate(code: string, start: number): { fixedStr: string; end: number } {
+  // code[start] is the opening backtick of a bad nested template literal.
+  // Converts it to a single-quoted string: '...' + (expr) + '...'
+  let result = "'";
+  let i = start + 1;
+  let depth = 0;
+
+  while (i < code.length) {
+    const c = code[i];
+
+    if (c === '\\') {
+      result += c + (code[i + 1] || '');
+      i += 2;
+      continue;
+    }
+
+    if (depth === 0) {
+      if (c === '`') { result += "'"; i++; break; }
+      if (c === '$' && code[i + 1] === '{') { result += "' + ("; i += 2; depth = 1; continue; }
+      if (c === "'") { result += "\\'"; i++; continue; }
+      if (c === '\n') { result += '\\n'; i++; continue; }
+      if (c === '\r') { result += '\\r'; i++; continue; }
+      result += c; i++;
+    } else {
+      // Inside ${...}: track brace depth
+      if (c === '{') { depth++; result += c; }
+      else if (c === '}') {
+        depth--;
+        result += depth === 0 ? ") + '" : c;
+      } else if (c === '`') {
+        // Nested template inside expression — recurse
+        const { fixedStr, end } = fixBadTemplate(code, i);
+        result += fixedStr;
+        i = end;
+        continue;
+      } else { result += c; }
+      i++;
+    }
+  }
+
+  return { fixedStr: result, end: i };
 }
 
 function generateRunId(): string {
