@@ -338,7 +338,7 @@ export default {
             // Static analysis: extract domains the generated code will fetch
             const domainsFetched = extractFetchDomains(code);
 
-            trackEvent(env, "generate", {
+            await trackEvent(env, "generate", {
               topic, runId, tier, model: llmResult.model, retried,
               totalMs: timing.totalMs, queryType, granted,
               warnings: validation.warnings,
@@ -370,7 +370,7 @@ export default {
             });
           } catch (err) {
             console.error("YUKTI STREAM ERROR:", err);
-            trackEvent(env, "failure", { topic, error: String(err) });
+            await trackEvent(env, "failure", { topic, error: String(err) });
             send("error", { error: err instanceof Error ? err.message : String(err) });
           } finally {
             controller.close();
@@ -510,7 +510,7 @@ export default {
           console.warn(`[${runId}] No yukti-meta block found in output`);
         }
 
-        trackEvent(env, "generate", {
+        await trackEvent(env, "generate", {
           topic, runId, tier, model: llmResult.model, retried,
           totalMs: timing.totalMs, queryType, granted,
           warnings: validation.warnings,
@@ -542,7 +542,7 @@ export default {
         });
       } catch (err) {
         console.error("YUKTI ERROR:", err);
-        trackEvent(env, "failure", { topic: "unknown", error: String(err) });
+        await trackEvent(env, "failure", { topic: "unknown", error: String(err) });
         return Response.json({
           error: err instanceof Error ? err.message : String(err),
         }, { status: 500 });
@@ -609,7 +609,7 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
           } catch {}
         }
 
-        trackEvent(env, "refine", { topic, instruction, runId });
+        await trackEvent(env, "refine", { topic, instruction, runId });
 
         return Response.json({
           ok: true,

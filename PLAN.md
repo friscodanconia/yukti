@@ -21,7 +21,7 @@
 ## P2: Recurring bugs
 
 - [x] Backtick nesting: rewrote `fixNestedBackticks()` as a proper state-machine parser — targets only `<script>` sections, preserves outer `${...}` expressions, handles multiple template literals; all 15 unit tests pass (scripts/test-backtick-fix.mjs)
-- [ ] Analytics counters not incrementing in KV
+- [x] Analytics counters not incrementing in KV — fixed by awaiting all 5 `trackEvent()` calls (were fire-and-forget, causing KV puts to be dropped before completion)
 - [ ] Some queries produce static (non-interactive) output despite prompt instructions
 
 ## P3: Done
