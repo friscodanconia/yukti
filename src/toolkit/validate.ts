@@ -82,6 +82,12 @@ export function validateWorkerCode(code: string): ValidationResult {
     }
   }
 
+  // Interactive element check — static-only output violates prompt rules
+  const hasInteractive = /<input\b|<button\b|<select\b|oninput\b|onclick\b|onchange\b|onkeyup\b/i.test(code);
+  if (!hasInteractive) {
+    warnings.push("No interactive elements detected — every tool must have at least one input, button, or slider");
+  }
+
   // Template literal check — common LLM mistake
   const backtickCount = (code.match(/`/g) || []).length;
   if (backtickCount > 10) {

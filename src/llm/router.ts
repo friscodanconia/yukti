@@ -321,9 +321,13 @@ export function classifyQuery(query: string): QueryClassification {
     tier = "standard";
   }
 
-  // Delight and comparison queries need at least standard — Haiku produces minimal output
+  // Delight, comparison, and lookup queries need at least standard — Haiku produces minimal/static output
+  // Only promote lookup when it has at least one real signal (score > 0); the type defaults to "lookup"
+  // when there are NO signals at all, and we don't want to over-upgrade truly ambiguous queries.
   const queryType = pickQueryType(typeScores);
   if ((queryType === "delight" || queryType === "comparison") && tier === "fast") {
+    tier = "standard";
+  } else if (queryType === "lookup" && typeScores.lookup > 0 && tier === "fast") {
     tier = "standard";
   }
 
@@ -403,7 +407,7 @@ export async function callLLM(
       model: model.id,
       max_tokens: 8192,
       messages: [
-        { role: "system", content: systemPrompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown fences, no explanation." },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
     }),

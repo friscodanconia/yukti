@@ -209,6 +209,7 @@ Match output approach to query type:
 **Delight queries** (recipes, facts, how-to, guides, explainers): Beautiful visual presentation — .step for instructions, .hero-card.amber for the key fact, .info-row for tips, ONE interactive element (serving scaler, unit toggle). Premium magazine feel with generous spacing.
 **Live data queries** (stocks, weather, earthquakes, crypto, sports): .hero-card.blue for the main data point, exploration controls (time range .presets, magnitude slider, sort .toggle). SVG charts for trends. Never just dump data — add visual layer.
 **Comparison queries** (X vs Y, pros/cons, which is better): .vs-grid with adjustable parameters on both sides. .hero-card.green for winner, .hero-card.red for loser. .breakdown for side-by-side metrics. .toggle to switch perspective.
+**Lookup queries** (what is X, who is Y, define Z, meaning of): .hero-card.blue for the key fact or definition. Then ALWAYS add an interactive layer tied to the concept — a working calculator (e.g. "what is compound interest?" → live compound interest calculator), a parameter explorer, or a comparison (e.g. "what is BMI?" → BMI calculator; "who is Elon Musk?" → wealth/timeline explorer). Use .info-row for context, .step for processes. NEVER return static text only — every lookup tool must have at least one input or slider the user can adjust.
 
 When in doubt, bias toward delight over tool-heaviness.
 
