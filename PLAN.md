@@ -24,5 +24,9 @@
 - [x] Analytics counters not incrementing in KV — fixed by awaiting all 5 `trackEvent()` calls (were fire-and-forget, causing KV puts to be dropped before completion)
 - [x] Some queries produce static (non-interactive) output despite prompt instructions — three-part fix: (1) removed conflicting "Return ONLY valid JSON" instruction that `callLLM` was appending to every system prompt (contradicted the JS-module instruction in `SYSTEM_PROMPT`); (2) lookup queries now promoted to `standard` tier when they have real signals (Haiku was producing minimal output); (3) added `lookup` output philosophy to `prompt.ts` requiring an interactive layer, plus a validation warning in `validate.ts` when no interactive elements are found. All 17 assertions pass (scripts/test-static-output-fix.mjs)
 
-## P3: Done
+## P3: Resilience
+
+- [x] Silent SSE truncation: if the stream ends without a `complete` or `error` event (worker timeout, network drop), `generate()` returns without setting `html` or `error`, so `hasResult` becomes false and the user is silently sent back to the home screen. Fixed: track `resultReceived` locally; if false after the read loop, call `setError("Stream ended unexpectedly — please try again")`.
+
+## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

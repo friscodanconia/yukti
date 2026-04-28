@@ -549,6 +549,7 @@ function App() {
 
       const decoder = new TextDecoder();
       let buffer = "";
+      let resultReceived = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -579,6 +580,7 @@ function App() {
               console.log("[Yukti SSE] stage:", payload.stage, payload.detail);
             } else if (eventType === "complete") {
               console.log("[Yukti SSE] complete, html_len:", payload.html?.length);
+              resultReceived = true;
               if (payload.ok && payload.html) {
                 setHtml(payload.html);
                 setCode(payload.code || null);
@@ -590,12 +592,19 @@ function App() {
               }
             } else if (eventType === "error") {
               console.error("[Yukti SSE] error:", payload.error);
+              resultReceived = true;
               setError(payload.error || "Generation failed");
             }
           } catch {
             console.warn("[Yukti SSE] Failed to parse event data:", dataStr.slice(0, 200));
           }
         }
+      }
+
+      // If the stream closed without sending a terminal event, the worker likely
+      // hit a CPU/memory limit or the network dropped mid-response.
+      if (!resultReceived) {
+        setError("Stream ended unexpectedly — please try again");
       }
     } catch (err) {
       console.error("[Yukti] Fetch error:", err);
