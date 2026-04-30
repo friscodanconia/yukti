@@ -28,5 +28,9 @@
 
 - [x] Silent SSE truncation: if the stream ends without a `complete` or `error` event (worker timeout, network drop), `generate()` returns without setting `html` or `error`, so `hasResult` becomes false and the user is silently sent back to the home screen. Fixed: track `resultReceived` locally; if false after the read loop, call `setError("Stream ended unexpectedly — please try again")`.
 
+## P2: Recurring bugs (continued)
+
+- [x] `handleLoadTool` stale state: loading a saved tool from My Tools preserved `code`, `meta`, `saved`, `copied`, `showDetails`, and `refineInput` from the previous generation — so the inspector showed wrong code and the refine bar operated on a different tool's code. Fixed by clearing all of those states at the start of `handleLoadTool` in `client.tsx`.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

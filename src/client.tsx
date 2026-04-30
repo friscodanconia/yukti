@@ -439,7 +439,13 @@ function App() {
   const handleLoadTool = async (tool: SavedTool) => {
     setLoading(true);
     setHtml(null);
+    setCode(null);
+    setMeta(null);
     setError(null);
+    setSaved(false);
+    setCopied(false);
+    setShowDetails(false);
+    setRefineInput("");
     setQuery(tool.query);
     setRunId(tool.runId);
     setToolUrl(tool.toolUrl);
