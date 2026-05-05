@@ -446,6 +446,8 @@ function App() {
     setCopied(false);
     setShowDetails(false);
     setRefineInput("");
+    setMobileRefineOpen(false);
+    setShowInspector(false);
     setQuery(tool.query);
     setRunId(tool.runId);
     setToolUrl(tool.toolUrl);

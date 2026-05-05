@@ -32,5 +32,14 @@
 
 - [x] `handleLoadTool` stale state: loading a saved tool from My Tools preserved `code`, `meta`, `saved`, `copied`, `showDetails`, and `refineInput` from the previous generation — so the inspector showed wrong code and the refine bar operated on a different tool's code. Fixed by clearing all of those states at the start of `handleLoadTool` in `client.tsx`.
 
+## P2: Recurring bugs (continued 2)
+
+- [x] `handleLoadTool` misses resetting `mobileRefineOpen` and `showInspector` — if either overlay was open when the user taps a saved tool on mobile, the stale sheet persists over the freshly loaded tool. Fixed: added `setMobileRefineOpen(false)` and `setShowInspector(false)` to `handleLoadTool` in `client.tsx`.
+
+## P5: Code quality
+
+- [ ] Dead code in `client.tsx`: `STAGE_MAP` (lines 80-125), `STAGE_ORDER` (line 127), and `onboardingStep` / `setOnboardingStep` state are defined but never read — remove to reduce confusion and bundle size.
+- [ ] Unused import in `server.ts`: `classifyComplexity` is imported from `./llm/router` but never called (the code uses `classifyQuery` instead).
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
