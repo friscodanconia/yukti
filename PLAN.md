@@ -38,7 +38,7 @@
 
 ## P5: Code quality
 
-- [ ] Dead code in `client.tsx`: `STAGE_MAP` (lines 80-125), `STAGE_ORDER` (line 127), and `onboardingStep` / `setOnboardingStep` state are defined but never read — remove to reduce confusion and bundle size.
+- [x] Dead code in `client.tsx`: `STAGE_MAP` (lines 80-125), `STAGE_ORDER` (line 127), and `onboardingStep` / `setOnboardingStep` state are defined but never read — remove to reduce confusion and bundle size.
 - [ ] Unused import in `server.ts`: `classifyComplexity` is imported from `./llm/router` but never called (the code uses `classifyQuery` instead).
 
 ## P4: Done

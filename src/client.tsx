@@ -77,55 +77,6 @@ function removeTool(runId: string) {
   localStorage.setItem("yukti-tools", JSON.stringify(tools));
 }
 
-const STAGE_MAP: Record<string, { label: string; detail: string; story: string[] }> = {
-  classifying: {
-    label: "Understanding your question",
-    detail: "Analyzing intent and complexity",
-    story: [
-      "Reading between the lines...",
-      "Figuring out what kind of tool you need",
-      "Choosing from 40+ live APIs",
-    ],
-  },
-  generating: {
-    label: "Crafting your interactive tool",
-    detail: "Generating a custom Worker module",
-    story: [
-      "Writing the code for your tool...",
-      "Adding sliders, inputs, and charts",
-      "Making it interactive and responsive",
-      "Wiring up live data connections",
-    ],
-  },
-  validating: {
-    label: "Checking code safety",
-    detail: "Validating structure and scanning for issues",
-    story: [
-      "Scanning for security issues...",
-      "Ensuring the code is sandboxed",
-    ],
-  },
-  executing: {
-    label: "Running in V8 sandbox",
-    detail: "Fetching live data and building the page",
-    story: [
-      "Spinning up an isolated environment...",
-      "Fetching live data from APIs",
-      "Rendering your interactive tool",
-    ],
-  },
-  retrying: {
-    label: "Fixing and retrying",
-    detail: "First attempt had an issue, regenerating",
-    story: [
-      "Something didn't look right...",
-      "Adjusting and regenerating",
-    ],
-  },
-};
-
-const STAGE_ORDER = ["classifying", "generating", "validating", "executing"];
-
 function BuildingPipeline({ currentStage, onBackground, query }: { currentStage: string | null; onBackground?: () => void; query?: string }) {
   const [elapsed, setElapsed] = useState(0);
   const [showNotifyBtn, setShowNotifyBtn] = useState(false);
@@ -309,7 +260,6 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return !localStorage.getItem("yukti-onboarded"); } catch { return false; }
   });
-  const [onboardingStep, setOnboardingStep] = useState(0);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [streamStage, setStreamStage] = useState<string | null>(null);
