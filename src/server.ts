@@ -12,7 +12,7 @@
  */
 
 import { SYSTEM_PROMPT, buildUserPrompt, PROMPT_VERSION } from "./llm/prompt";
-import { classifyComplexity, classifyQuery, callLLM, CLARIFY_PROMPT, isToolWorthy } from "./llm/router";
+import { classifyQuery, callLLM, CLARIFY_PROMPT, isToolWorthy } from "./llm/router";
 import { validateWorkerCode, sanitizeCode, injectBaseCSS } from "./toolkit/validate";
 import { BASE_CSS, BASE_SCRIPT } from "./toolkit/base-css";
 import { generateFetchGuard } from "./toolkit/outbound";
@@ -98,7 +98,7 @@ interface ToolMeta {
 }
 
 function extractToolMeta(html: string): ToolMeta | null {
-  const match = html.match(/<script\s+type="application\/json"\s+id="yukti-meta">([\s\S]*?)<\/script>/);
+  const match = html.match(/<script\s+type="application\/json"\s+id="yukti-meta">[\s\S]*?<\/script>/);
   if (!match) return null;
   try {
     return JSON.parse(match[1]);
@@ -640,7 +640,12 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
           const { value: html, metadata } = await env.TOOLS_KV.getWithMetadata<{ topic?: string }>("tool:" + runId);
           if (html) {
             const topic = metadata?.topic || "Interactive Tool";
-            const ogTags = `<meta property="og:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">\n<meta property="og:description" content="Interactive tool built on the fly by Yukti">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="Yukti">\n<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">`;
+            const ogTags = `<meta property="og:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">
+<meta property="og:description" content="Interactive tool built on the fly by Yukti">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yukti">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">`.replace(/\n/g, '\n');
             const footer = `<div style="text-align:center;padding:1.5rem 1rem 1rem;margin-top:2rem;border-top:1px solid rgba(191,176,154,0.2);font-family:'Outfit',system-ui,sans-serif;font-size:0.6875rem;color:#96897a;">Built with <a href="/" style="color:#c2652a;text-decoration:none;font-weight:600;">Yukti</a> — interactive tools, built on the fly</div>`;
             let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
             enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");
@@ -856,14 +861,14 @@ function selectCapabilities(topic: string, hostEnv: Env): { env: Record<string, 
  */
 function extractFetchDomains(code: string): string[] {
   const domains: string[] = [];
-  const fetchRegex = /fetch\s*\(\s*['"`]https?:\/\/([^'"`/\s?#]+)/g;
+  const fetchRegex = /fetch\s*\(\s*['"\`]https?:\/\/([^'"\`/\s?#]+)/g;
   let match;
   while ((match = fetchRegex.exec(code)) !== null) {
     const domain = match[1].toLowerCase();
     if (!domains.includes(domain)) domains.push(domain);
   }
   // Also match URL construction patterns: new URL('https://domain/...')
-  const urlRegex = /new\s+URL\s*\(\s*['"`]https?:\/\/([^'"`/\s?#]+)/g;
+  const urlRegex = /new\s+URL\s*\(\s*['"\`]https?:\/\/([^'"\`/\s?#]+)/g;
   while ((match = urlRegex.exec(code)) !== null) {
     const domain = match[1].toLowerCase();
     if (!domains.includes(domain)) domains.push(domain);
