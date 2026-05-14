@@ -110,7 +110,7 @@ function extractToolMeta(html: string): ToolMeta | null {
 // ── Cookie helpers ─────────────────────────────────────────
 function getCookie(request: Request, name: string): string | null {
   const cookies = request.headers.get("Cookie") || "";
-  const match = cookies.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  const match = cookies.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
   return match ? match[1] : null;
 }
 
@@ -387,168 +387,6 @@ export default {
       });
     }
 
-    // ── API: Generate a tool ─────────────────────────────────
-    if (url.pathname === "/api/explain" && request.method === "POST") {
-      try {
-        const { topic } = await request.json<{ topic: string }>();
-        if (!topic?.trim()) {
-          return Response.json({ error: "Topic is required" }, { status: 400 });
-        }
-        if (!env.OPENROUTER_API_KEY) {
-          return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 500 });
-        }
-
-        // Scope check — reject queries that aren't suited for tool generation
-        const worthiness = isToolWorthy(topic);
-        if (!worthiness.worthy) {
-          return Response.json({
-            ok: false,
-            notToolWorthy: true,
-            reason: worthiness.reason,
-            suggestion: worthiness.suggestion,
-          });
-        }
-
-        const runId = generateRunId();
-        const timing: Record<string, number> = {};
-        const totalStart = Date.now();
-
-        // 1. Classify + generate code (+ image in parallel for delight queries)
-        const classification = classifyQuery(topic);
-        const tier = classification.tier;
-        const queryType = classification.queryType;
-        const userPrompt = buildUserPrompt(topic);
-        const wantsImage = (queryType === "delight" || isDelightQuery(topic)) && env.GEMINI_API_KEY;
-
-        const llmStart = Date.now();
-        // Fire LLM and image generation in parallel
-        const [llmResult, heroImage] = await Promise.all([
-          callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, userPrompt),
-          wantsImage ? generateGeminiImage(env.GEMINI_API_KEY, topic) : Promise.resolve(null),
-        ]);
-        let code = sanitizeCode(cleanCode(llmResult.text));
-        timing.llmMs = Date.now() - llmStart;
-        if (heroImage) console.log(`[${runId}] Gemini image generated (${Math.round(heroImage.length / 1024)}KB)`);
-
-        // 2. Validate
-        let validation = validateWorkerCode(code);
-        if (validation.warnings.length) {
-          console.warn(`[${runId}] Validation warnings:`, validation.warnings);
-        }
-        if (!validation.valid) {
-          return Response.json({
-            error: `Code validation failed: ${validation.error}`,
-            runId,
-          }, { status: 502 });
-        }
-
-        // 3. Execute in Dynamic Worker
-        let html: string;
-        let granted: string[] = [];
-        let retried = false;
-        const execStart = Date.now();
-        try {
-          const result = await executeInWorker(env, code, topic);
-          html = result.html;
-          granted = result.granted;
-        } catch (loadError) {
-          retried = true;
-          console.log(`[${runId}] First attempt failed, retrying:`, loadError);
-          const errMsg = loadError instanceof Error ? loadError.message : String(loadError);
-          const retryPrompt = `${userPrompt}\n\nYour previous code failed with: ${errMsg}\n\nCommon causes:\n- Using backticks/template literals inside the HTML string (use '+' concatenation instead)\n- Using ES6 classes inside <script> (use plain functions)\n- Syntax errors in nested strings\n- Accessing properties on null API responses (e.g., data.meals[0] when data.meals is null). ALWAYS check: if (data && data.meals && data.meals.length > 0) before accessing.\n- Not handling API fetch failures — ALWAYS wrap fetch in try/catch with a hardcoded fallback.\n\nFix the error and return the corrected module.`;
-
-          const retryStart = Date.now();
-          const retryResult = await callLLM(env.OPENROUTER_API_KEY, tier, SYSTEM_PROMPT, retryPrompt);
-          code = sanitizeCode(cleanCode(retryResult.text));
-          timing.retryLlmMs = Date.now() - retryStart;
-
-          validation = validateWorkerCode(code);
-          if (!validation.valid) {
-            return Response.json({ error: `Retry failed validation: ${validation.error}`, runId }, { status: 502 });
-          }
-
-          try {
-            const retryResult2 = await executeInWorker(env, code, topic);
-            html = retryResult2.html;
-            granted = retryResult2.granted;
-          } catch (retryError) {
-            return Response.json({
-              error: `Worker execution failed after retry: ${retryError instanceof Error ? retryError.message : String(retryError)}`,
-              runId,
-            }, { status: 502 });
-          }
-        }
-        timing.execMs = Date.now() - execStart;
-
-        // 4. Inject base CSS + hero image
-        html = injectBaseCSS(html, BASE_CSS, BASE_SCRIPT);
-        if (heroImage) {
-          html = injectHeroImage(html, heroImage);
-        }
-        timing.totalMs = Date.now() - totalStart;
-
-        // 5. Save to KV for sharing
-        let toolUrl: string | null = null;
-        if (env.TOOLS_KV) {
-          try {
-            await env.TOOLS_KV.put(`tool:${runId}`, html, {
-              expirationTtl: 86400 * 90, // 90 days
-              metadata: { topic, model: llmResult.model, uid, createdAt: new Date().toISOString() },
-            });
-            toolUrl = `/tool/${runId}`;
-          } catch (kvErr) {
-            console.warn(`[${runId}] KV save failed:`, kvErr);
-          }
-        }
-
-        // Static analysis: extract domains the generated code will fetch
-        const domainsFetched = extractFetchDomains(code);
-
-        // Extract structured metadata
-        const toolMeta = extractToolMeta(html);
-        if (!toolMeta) {
-          console.warn(`[${runId}] No yukti-meta block found in output`);
-        }
-
-        await trackEvent(env, "generate", {
-          topic, runId, tier, model: llmResult.model, retried,
-          totalMs: timing.totalMs, queryType, granted,
-          warnings: validation.warnings,
-          success: true,
-          domainsFetched,
-          toolMeta: toolMeta || null,
-        });
-
-        return Response.json({
-          ok: true,
-          html,
-          code,
-          runId,
-          toolUrl,
-          meta: {
-            tier,
-            model: llmResult.model,
-            provider: llmResult.provider,
-            retried,
-            timing,
-            granted,
-            queryType,
-            promptVersion: PROMPT_VERSION,
-            domainsFetched,
-            validationWarnings: validation.warnings,
-            runId,
-            toolMeta: toolMeta || null,
-          },
-        });
-      } catch (err) {
-        console.error("YUKTI ERROR:", err);
-        await trackEvent(env, "failure", { topic: "unknown", error: String(err) });
-        return Response.json({
-          error: err instanceof Error ? err.message : String(err),
-        }, { status: 500 });
-      }
-    }
-
     // ── API: Refine an existing tool ──────────────────────────
     if (url.pathname === "/api/refine" && request.method === "POST") {
       try {
@@ -566,10 +404,10 @@ export default {
         const refinePrompt = `Here is a Cloudflare Worker module that generates an interactive tool for: "${topic}"
 
 \`\`\`javascript
-${originalCode}
+${"${originalCode}"}
 \`\`\`
 
-The user wants this modification: "${instruction}"
+The user wants this modification: "${"${instruction}"}"
 
 Return the COMPLETE modified Worker module with the change applied. Return ONLY the JavaScript module — no explanation, no markdown fences. Keep everything that works, only change what the user asked for.`;
 
@@ -606,7 +444,9 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
               metadata: { topic, instruction, model: llmResult.model, uid, createdAt: new Date().toISOString() },
             });
             toolUrl = `/tool/${runId}`;
-          } catch {}
+          } catch (kvErr) {
+            console.warn(`[${runId}] KV save failed (refine):`, kvErr);
+          }
         }
 
         await trackEvent(env, "refine", { topic, instruction, runId });
@@ -640,12 +480,12 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
           const { value: html, metadata } = await env.TOOLS_KV.getWithMetadata<{ topic?: string }>("tool:" + runId);
           if (html) {
             const topic = metadata?.topic || "Interactive Tool";
-            const ogTags = `<meta property="og:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">
+            const ogTags = `<meta property="og:title" content="Yukti — ${"${topic.replace(/\"/g, '&quot;')}"}">
 <meta property="og:description" content="Interactive tool built on the fly by Yukti">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Yukti">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Yukti — ${topic.replace(/"/g, '&quot;')}">`.replace(/\n/g, '\n');
+<meta name="twitter:title" content="Yukti — ${"${topic.replace(/\"/g, '&quot;')}"}">`.replace(/\n/g, '\n');
             const footer = `<div style="text-align:center;padding:1.5rem 1rem 1rem;margin-top:2rem;border-top:1px solid rgba(191,176,154,0.2);font-family:'Outfit',system-ui,sans-serif;font-size:0.6875rem;color:#96897a;">Built with <a href="/" style="color:#c2652a;text-decoration:none;font-weight:600;">Yukti</a> — interactive tools, built on the fly</div>`;
             let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
             enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");
@@ -742,7 +582,9 @@ calc();
               metadata: { topic, refreshed: true, uid, createdAt: new Date().toISOString() },
             });
             toolUrl = `/tool/${runId}`;
-          } catch {}
+          } catch (kvErr) {
+            console.warn(`[${runId}] KV save failed (refresh):`, kvErr);
+          }
         }
 
         return Response.json({

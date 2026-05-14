@@ -27,6 +27,7 @@
 ## P3: Resilience
 
 - [x] Silent SSE truncation: if the stream ends without a `complete` or `error` event (worker timeout, network drop), `generate()` returns without setting `html` or `error`, so `hasResult` becomes false and the user is silently sent back to the home screen. Fixed: track `resultReceived` locally; if false after the read loop, call `setError("Stream ended unexpectedly — please try again")`.
+- [x] Silent KV save failures in `/api/refine` (server.ts:609) and `/api/refresh` (server.ts:745): bare `catch {}` swallowed errors with no logging, unlike `/api/stream` which logs a warning. Added `console.warn` to both so failures surface in worker logs.
 
 ## P2: Recurring bugs (continued)
 
@@ -40,6 +41,7 @@
 
 - [x] Dead code in `client.tsx`: `STAGE_MAP` (lines 80-125), `STAGE_ORDER` (line 127), and `onboardingStep` / `setOnboardingStep` state are defined but never read — remove to reduce confusion and bundle size.
 - [x] Unused import in `server.ts`: `classifyComplexity` is imported from `./llm/router` but never called (the code uses `classifyQuery` instead).
+- [ ] Dead `/api/explain` endpoint in `server.ts` (~160 lines, 391-550): duplicates `/api/stream` logic but is never called by the client — remove to reduce maintenance surface.
 
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
