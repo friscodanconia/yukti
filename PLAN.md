@@ -41,7 +41,7 @@
 
 - [x] Dead code in `client.tsx`: `STAGE_MAP` (lines 80-125), `STAGE_ORDER` (line 127), and `onboardingStep` / `setOnboardingStep` state are defined but never read — remove to reduce confusion and bundle size.
 - [x] Unused import in `server.ts`: `classifyComplexity` is imported from `./llm/router` but never called (the code uses `classifyQuery` instead).
-- [ ] Dead `/api/explain` endpoint in `server.ts` (~160 lines, 391-550): duplicates `/api/stream` logic but is never called by the client — remove to reduce maintenance surface.
+- [x] Dead `/api/explain` endpoint in `server.ts` (~160 lines, 391-550): duplicates `/api/stream` logic but is never called by the client — removed in commit 8012495 along with KV-logging fix.
 
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
