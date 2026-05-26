@@ -43,5 +43,9 @@
 - [x] Unused import in `server.ts`: `classifyComplexity` is imported from `./llm/router` but never called (the code uses `classifyQuery` instead).
 - [x] Dead `/api/explain` endpoint in `server.ts` (~160 lines, 391-550): duplicates `/api/stream` logic but is never called by the client — removed in commit 8012495 along with KV-logging fix.
 
+## P2: Recurring bugs (continued 3)
+
+- [x] `extractToolMeta()` regex missing capture group (`server.ts:101`): regex matched the full `<script>` tag but had no capture group, so `match[1]` was always `undefined` → `JSON.parse(undefined)` threw → caught silently → returned `null` for every tool. This silently broke the Inspector's metadata tab and analytics metadata collection for all tools. Fixed by adding parens around `[\s\S]*?` to create a capture group.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

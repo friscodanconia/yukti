@@ -98,7 +98,7 @@ interface ToolMeta {
 }
 
 function extractToolMeta(html: string): ToolMeta | null {
-  const match = html.match(/<script\s+type="application\/json"\s+id="yukti-meta">[\s\S]*?<\/script>/);
+  const match = html.match(/<script\s+type="application\/json"\s+id="yukti-meta">([\s\S]*?)<\/script>/);
   if (!match) return null;
   try {
     return JSON.parse(match[1]);
