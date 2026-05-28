@@ -47,5 +47,9 @@
 
 - [x] `extractToolMeta()` regex missing capture group (`server.ts:101`): regex matched the full `<script>` tag but had no capture group, so `match[1]` was always `undefined` → `JSON.parse(undefined)` threw → caught silently → returned `null` for every tool. This silently broke the Inspector's metadata tab and analytics metadata collection for all tools. Fixed by adding parens around `[\s\S]*?` to create a capture group.
 
+## P2: Recurring bugs (continued 4)
+
+- [x] Unprotected `request.json()` in `/api/me/tools` POST (server.ts:159) and DELETE (server.ts:169): malformed request bodies throw uncaught exceptions that propagate out of `handleRequest` with no JSON error response. Wrap both in try-catch to return `400 Bad Request` with `{ ok: false, error: "Invalid request body" }`, matching the pattern used in `/api/clarify` (server.ts:178-198).
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

@@ -156,7 +156,13 @@ export default {
 
     if (url.pathname === "/api/me/tools" && request.method === "POST") {
       if (!env.TOOLS_KV) return Response.json({ ok: false, error: "KV not configured" }, { status: 500 });
-      const { runId, query, toolUrl, model } = await request.json<{ runId: string; query: string; toolUrl: string; model: string }>();
+      let body: { runId: string; query: string; toolUrl: string; model: string };
+      try {
+        body = await request.json<{ runId: string; query: string; toolUrl: string; model: string }>();
+      } catch {
+        return Response.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+      }
+      const { runId, query, toolUrl, model } = body;
       const userData = await getUserData(env, uid);
       const tool = { runId, query, toolUrl, model, savedAt: new Date().toISOString() };
       userData.tools = [tool, ...userData.tools.filter((t: any) => t.runId !== runId)].slice(0, 100);
@@ -166,7 +172,13 @@ export default {
 
     if (url.pathname === "/api/me/tools" && request.method === "DELETE") {
       if (!env.TOOLS_KV) return Response.json({ ok: false, error: "KV not configured" }, { status: 500 });
-      const { runId } = await request.json<{ runId: string }>();
+      let body: { runId: string };
+      try {
+        body = await request.json<{ runId: string }>();
+      } catch {
+        return Response.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+      }
+      const { runId } = body;
       const userData = await getUserData(env, uid);
       userData.tools = userData.tools.filter((t: any) => t.runId !== runId);
       await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });
