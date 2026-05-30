@@ -51,5 +51,9 @@
 
 - [x] Unprotected `request.json()` in `/api/me/tools` POST (server.ts:159) and DELETE (server.ts:169): malformed request bodies throw uncaught exceptions that propagate out of `handleRequest` with no JSON error response. Wrap both in try-catch to return `400 Bad Request` with `{ ok: false, error: "Invalid request body" }`, matching the pattern used in `/api/clarify` (server.ts:178-198).
 
+## P2: Security fixes
+
+- [x] Missing runId validation + weak RNG: (1) `/tool/` (server.ts:487) and `/api/run/` (server.ts:617) extract `runId` from the URL and use it directly as a KV key with no format check — any arbitrary string (very long, containing special chars) hits KV; add a `^[a-z0-9]{8}$` guard before both lookups. (2) `generateRunId()` (server.ts:963) uses `Math.random()` which is not cryptographically secure — replace with `crypto.getRandomValues()`.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

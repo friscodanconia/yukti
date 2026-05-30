@@ -485,7 +485,7 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
     // ── Serve saved tool ─────────────────────────────────────
     if (url.pathname.startsWith("/tool/")) {
       const runId = url.pathname.slice(6); // strip "/tool/"
-      if (!runId) return new Response("Not found", { status: 404 });
+      if (!runId || !/^[a-z0-9]{8}$/.test(runId)) return new Response("Not found", { status: 404 });
 
       if (env.TOOLS_KV) {
         try {
@@ -615,7 +615,7 @@ calc();
     // ── API: Run metadata lookup ────────────────────────────────
     if (url.pathname.startsWith("/api/run/") && request.method === "GET") {
       const lookupRunId = url.pathname.slice("/api/run/".length);
-      if (!lookupRunId) return Response.json({ error: "runId required" }, { status: 400 });
+      if (!lookupRunId || !/^[a-z0-9]{8}$/.test(lookupRunId)) return Response.json({ error: "runId required" }, { status: 400 });
       if (!env.TOOLS_KV) return Response.json({ error: "KV not configured" }, { status: 500 });
       try {
         const raw = await env.TOOLS_KV.get(`run:${lookupRunId}`);
@@ -962,11 +962,9 @@ function fixBadTemplate(code: string, start: number): { fixedStr: string; end: n
 
 function generateRunId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let id = "";
-  for (let i = 0; i < 8; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return id;
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => chars[b % chars.length]).join("");
 }
 
 async function trackEvent(
