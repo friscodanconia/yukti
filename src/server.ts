@@ -214,7 +214,13 @@ export default {
 
     // ── API: Stream generation with SSE ────────────────────────
     if (url.pathname === "/api/stream" && request.method === "POST") {
-      const { topic } = await request.json<{ topic: string }>();
+      let body: { topic: string };
+      try {
+        body = await request.json<{ topic: string }>();
+      } catch {
+        return Response.json({ error: "Invalid request body" }, { status: 400 });
+      }
+      const { topic } = body;
       if (!topic?.trim()) {
         return Response.json({ error: "Topic is required" }, { status: 400 });
       }

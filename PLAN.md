@@ -55,5 +55,9 @@
 
 - [x] Missing runId validation + weak RNG: (1) `/tool/` (server.ts:487) and `/api/run/` (server.ts:617) extract `runId` from the URL and use it directly as a KV key with no format check — any arbitrary string (very long, containing special chars) hits KV; add a `^[a-z0-9]{8}$` guard before both lookups. (2) `generateRunId()` (server.ts:963) uses `Math.random()` which is not cryptographically secure — replace with `crypto.getRandomValues()`.
 
+## P2: Recurring bugs (continued 5)
+
+- [x] Unprotected `request.json()` in `/api/stream` (server.ts:217): same class of bug as the `/api/me/tools` fix — malformed JSON body throws an uncaught exception that propagates out of `handleRequest` with no proper error response. Wrapped in try-catch to return `400 Bad Request` with `{ error: "Invalid request body" }`, consistent with all other POST endpoints.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
