@@ -59,5 +59,9 @@
 
 - [x] Unprotected `request.json()` in `/api/stream` (server.ts:217): same class of bug as the `/api/me/tools` fix — malformed JSON body throws an uncaught exception that propagates out of `handleRequest` with no proper error response. Wrapped in try-catch to return `400 Bad Request` with `{ error: "Invalid request body" }`, consistent with all other POST endpoints.
 
+## P2: Observability
+
+- [x] `getUserData` bare `catch {}` (server.ts:121): KV read failures and JSON parse errors are silently swallowed — the function returns empty defaults with no trace in worker logs, making production data-loss bugs impossible to diagnose. Added `console.warn` with uid and error so failures surface in Cloudflare logs.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

@@ -118,7 +118,9 @@ async function getUserData(env: Env, uid: string): Promise<{ tools: any[]; creat
   try {
     const raw = await env.TOOLS_KV.get(`user:${uid}`);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (err) {
+    console.warn(`[getUserData] KV read/parse failed for uid=${uid}:`, err);
+  }
   return { tools: [], createdAt: new Date().toISOString() };
 }
 
