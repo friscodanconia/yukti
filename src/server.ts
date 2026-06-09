@@ -77,8 +77,17 @@ async function generateGeminiImage(apiKey: string, query: string): Promise<strin
   }
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function injectHeroImage(html: string, imageDataUri: string): string {
-  // Inject after <body> tag as a full-width hero image
+  if (!imageDataUri.startsWith("data:image/")) return html;
   const heroHtml = `<div style="margin:-2.5rem -1.75rem 1.5rem;text-align:center"><img src="${imageDataUri}" alt="" style="width:100%;max-height:280px;object-fit:cover;border-radius:0 0 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,0.08)"></div>`;
   return html.replace(/<body([^>]*)>/i, `<body$1>${heroHtml}`);
 }
@@ -499,13 +508,13 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
         try {
           const { value: html, metadata } = await env.TOOLS_KV.getWithMetadata<{ topic?: string }>("tool:" + runId);
           if (html) {
-            const topic = metadata?.topic || "Interactive Tool";
-            const ogTags = `<meta property="og:title" content="Yukti — ${"${topic.replace(/\"/g, '&quot;')}"}">
+            const topic = escapeHtml(metadata?.topic || "Interactive Tool");
+            const ogTags = `<meta property="og:title" content="Yukti — ${topic}">
 <meta property="og:description" content="Interactive tool built on the fly by Yukti">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Yukti">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Yukti — ${"${topic.replace(/\"/g, '&quot;')}"}">`.replace(/\n/g, '\n');
+<meta name="twitter:title" content="Yukti — ${topic}">`.replace(/\n/g, '\n');
             const footer = `<div style="text-align:center;padding:1.5rem 1rem 1rem;margin-top:2rem;border-top:1px solid rgba(191,176,154,0.2);font-family:'Outfit',system-ui,sans-serif;font-size:0.6875rem;color:#96897a;">Built with <a href="/" style="color:#c2652a;text-decoration:none;font-weight:600;">Yukti</a> — interactive tools, built on the fly</div>`;
             let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
             enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");

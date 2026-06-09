@@ -63,5 +63,14 @@
 
 - [x] `getUserData` bare `catch {}` (server.ts:121): KV read failures and JSON parse errors are silently swallowed — the function returns empty defaults with no trace in worker logs, making production data-loss bugs impossible to diagnose. Added `console.warn` with uid and error so failures surface in Cloudflare logs.
 
+## P2: Security fixes (continued)
+
+- [x] XSS in OG meta tag topic injection (server.ts:503,508): `topic.replace(/\"/g, '&quot;')` only escapes double quotes — `<`, `>`, and `&` pass through unescaped. Added `escapeHtml()` helper (escapes `&`, `<`, `>`, `"`, `'`) and used it for topic in all OG/Twitter meta tags.
+- [x] Unvalidated image data URI (server.ts:82): `imageDataUri` from Gemini API is injected into `<img src>` without checking it's a `data:image/` URI — added `startsWith("data:image/")` guard; returns original html unchanged if check fails.
+
+## P2: Observability (continued)
+
+- [ ] Silent server-sync failures in `handleSave` and `handleRemoveTool` (client.tsx:374,386): bare `catch {}` hides network/server errors — user sees success in UI but tool was never persisted on server. Add `console.warn` so failures surface in browser devtools.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
