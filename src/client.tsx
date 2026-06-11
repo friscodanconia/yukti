@@ -371,7 +371,9 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tool),
       });
-    } catch {} // fail silently, localStorage is the fallback
+    } catch (err) {
+      console.warn("[handleSave] server sync failed — tool saved locally only:", err);
+    }
   };
 
   const handleRemoveTool = async (id: string) => {
@@ -383,7 +385,9 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ runId: id }),
       });
-    } catch {} // fail silently
+    } catch (err) {
+      console.warn("[handleRemoveTool] server sync failed — tool removed locally only:", err);
+    }
   };
 
   const handleLoadTool = async (tool: SavedTool) => {

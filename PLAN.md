@@ -70,7 +70,7 @@
 
 ## P2: Observability (continued)
 
-- [ ] Silent server-sync failures in `handleSave` and `handleRemoveTool` (client.tsx:374,386): bare `catch {}` hides network/server errors — user sees success in UI but tool was never persisted on server. Add `console.warn` so failures surface in browser devtools.
+- [x] Silent server-sync failures in `handleSave` and `handleRemoveTool` (client.tsx:374,386): bare `catch {}` hides network/server errors — user sees success in UI but tool was never persisted on server. Added `console.warn` with context so failures surface in browser devtools.
 
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
