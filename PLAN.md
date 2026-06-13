@@ -72,5 +72,9 @@
 
 - [x] Silent server-sync failures in `handleSave` and `handleRemoveTool` (client.tsx:374,386): bare `catch {}` hides network/server errors — user sees success in UI but tool was never persisted on server. Added `console.warn` with context so failures surface in browser devtools.
 
+## P2: Recurring bugs (continued 6)
+
+- [x] Silent refresh failure in toolbar Refresh button (client.tsx:1114): bare `catch {}` swallowed network errors and JSON parse exceptions — user saw spinner disappear with no feedback. Also, if server returned non-200 (400/500), `data.error` was silently dropped. Fixed: (1) nested try-catch on JSON.parse to surface parse failures; (2) `!res.ok` guard shows `data.error`; (3) outer catch replaced with `catch (err) { setError(...) }` so network failures are visible.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

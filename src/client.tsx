@@ -1103,15 +1103,19 @@ function App() {
                                 body: JSON.stringify({ code, topic: query }),
                               });
                               const text = await res.text();
-                              const data = JSON.parse(text);
+                              let data: Record<string, unknown>;
+                              try { data = JSON.parse(text); } catch { setError("Invalid response from server"); return; }
+                              if (!res.ok) { setError((data.error as string) || "Refresh failed"); return; }
                               if (data.ok) {
-                                setHtml(data.html);
-                                setRunId(data.runId);
-                                setToolUrl(data.toolUrl);
+                                setHtml(data.html as string);
+                                setRunId(data.runId as string);
+                                setToolUrl(data.toolUrl as string | null);
                                 setSaved(false);
                                 setCopied(false);
                               }
-                            } catch {} finally { setRefining(false); }
+                            } catch (err) {
+                              setError(err instanceof Error ? err.message : "Refresh failed");
+                            } finally { setRefining(false); }
                           }}
                           className="text-sm text-[#78716C] hover:text-[#C2410C] transition-colors font-medium"
                           title="Re-run the same code to refresh live data"
