@@ -76,5 +76,9 @@
 
 - [x] Silent refresh failure in toolbar Refresh button (client.tsx:1114): bare `catch {}` swallowed network errors and JSON parse exceptions — user saw spinner disappear with no feedback. Also, if server returned non-200 (400/500), `data.error` was silently dropped. Fixed: (1) nested try-catch on JSON.parse to surface parse failures; (2) `!res.ok` guard shows `data.error`; (3) outer catch replaced with `catch (err) { setError(...) }` so network failures are visible.
 
+## P2: Observability (continued 2)
+
+- [x] Bare `catch {}` in `/tool/` handler (server.ts:525): KV fetch errors were silently swallowed, so timeouts or permission failures showed a misleading 404 "Tool not found or expired" instead of a 500. Fixed: added `console.warn` with runId and error, and return a proper 500 response. Also added `console.warn` to the silent catch in `/api/run/` (server.ts:641) so corrupted KV data surfaces in worker logs.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

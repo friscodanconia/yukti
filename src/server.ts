@@ -522,7 +522,10 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
               headers: { "Content-Type": "text/html; charset=utf-8" },
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn(`[/tool/${runId}] KV fetch failed:`, err);
+          return new Response("Error loading tool — please try again", { status: 500 });
+        }
       }
       return new Response("Tool not found or expired", { status: 404 });
     }
@@ -638,7 +641,8 @@ calc();
         const raw = await env.TOOLS_KV.get(`run:${lookupRunId}`);
         if (!raw) return Response.json({ error: "Run not found or expired" }, { status: 404 });
         return Response.json({ runId: lookupRunId, ...JSON.parse(raw) });
-      } catch {
+      } catch (err) {
+        console.warn(`[/api/run/${lookupRunId}] KV read/parse failed:`, err);
         return Response.json({ error: "Failed to read run data" }, { status: 500 });
       }
     }
