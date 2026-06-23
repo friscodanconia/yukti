@@ -329,6 +329,7 @@ function App() {
   const [mobileRefineOpen, setMobileRefineOpen] = useState(false);
   const [fallback, setFallback] = useState<{ reason: string; suggestion?: string } | null>(null);
   const backgroundedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Keep ref in sync with state
@@ -391,6 +392,10 @@ function App() {
   };
 
   const handleLoadTool = async (tool: SavedTool) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setLoading(true);
     setHtml(null);
     setCode(null);
@@ -456,6 +461,14 @@ function App() {
 
   const generate = useCallback(async (topic: string) => {
     if (!topic.trim()) return;
+
+    // Cancel any in-flight generation before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setStreamStage(null);
     setHtml(null);
@@ -476,6 +489,7 @@ function App() {
     try {
       const res = await fetch("/api/stream", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic }),
       });
@@ -569,13 +583,18 @@ function App() {
         setError("Stream ended unexpectedly — please try again");
       }
     } catch (err) {
+      // Ignore errors from requests we intentionally cancelled
+      if (err instanceof Error && err.name === "AbortError") return;
       console.error("[Yukti] Fetch error:", err);
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
-      setLoading(false);
-      setStreamStage(null);
-      if (backgroundedRef.current) {
-        setToolReady(true);
+      // Only clean up loading state if this request wasn't superseded by a newer one
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setStreamStage(null);
+        if (backgroundedRef.current) {
+          setToolReady(true);
+        }
       }
     }
   }, []);

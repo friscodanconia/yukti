@@ -80,5 +80,9 @@
 
 - [x] Bare `catch {}` in `/tool/` handler (server.ts:525): KV fetch errors were silently swallowed, so timeouts or permission failures showed a misleading 404 "Tool not found or expired" instead of a 500. Fixed: added `console.warn` with runId and error, and return a proper 500 response. Also added `console.warn` to the silent catch in `/api/run/` (server.ts:641) so corrupted KV data surfaces in worker logs.
 
+## P2: Recurring bugs (continued 7)
+
+- [x] Race condition in `generate()` when backgrounded: if the user backgrounds a generation and then clicks a saved tool or Fork, two concurrent SSE streams run and race to write `html`/`code`/`runId` state. Fixed by adding `abortControllerRef` (a `useRef<AbortController | null>`) — `generate()` aborts the previous controller before starting a new one, and `handleLoadTool` aborts any in-flight generation before fetching the saved tool. The aborted stream's `finally` block checks `controller.signal.aborted` and skips the `setLoading(false)` call so it doesn't clear loading state for the new request.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
