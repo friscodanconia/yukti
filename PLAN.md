@@ -84,5 +84,10 @@
 
 - [x] Race condition in `generate()` when backgrounded: if the user backgrounds a generation and then clicks a saved tool or Fork, two concurrent SSE streams run and race to write `html`/`code`/`runId` state. Fixed by adding `abortControllerRef` (a `useRef<AbortController | null>`) — `generate()` aborts the previous controller before starting a new one, and `handleLoadTool` aborts any in-flight generation before fetching the saved tool. The aborted stream's `finally` block checks `controller.signal.aborted` and skips the `setLoading(false)` call so it doesn't clear loading state for the new request.
 
+## P2: Recurring bugs (continued 8)
+
+- [x] SSE loop doesn't check abort signal inside the event-processing `for` loop (client.tsx:530-578): between when `abort()` is called and when `reader.read()` next throws AbortError, the `for(const part of parts)` loop can still process a buffered "complete" event and call `setHtml(oldHtml)`, `setCode(oldCode)`, etc. — overwriting state the new `generate()` just reset to `null`. Fixed: added `if (controller.signal.aborted) break` at the top of the `while` loop and at the start of the `for` loop so stale events are discarded immediately on abort.
+- [ ] Clipboard API without `.catch()` in My Tools share button (client.tsx:858), inspector share button (client.tsx:966), and mobile action bar share button (client.tsx:1421): `navigator.clipboard.writeText()` is called without awaiting or catching — on clipboard permission denial (incognito, non-HTTPS, or sandboxed contexts) the promise rejects silently and the UI still shows "✓ Copied!" even though nothing was copied. Fix: await the clipboard write inside a try/catch; only update the button UI on success, show a brief error indication on failure.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)

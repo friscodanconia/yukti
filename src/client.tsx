@@ -528,6 +528,7 @@ function App() {
       let resultReceived = false;
 
       while (true) {
+        if (controller.signal.aborted) break;
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -537,6 +538,7 @@ function App() {
         buffer = parts.pop() || ""; // last part may be incomplete
 
         for (const part of parts) {
+          if (controller.signal.aborted) break;
           if (!part.trim()) continue;
           let eventType = "message";
           let dataStr = "";
