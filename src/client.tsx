@@ -305,6 +305,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [myTools, setMyTools] = useState<SavedTool[]>(getSavedTools);
   const [backgrounded, setBackgrounded] = useState(false);
@@ -403,6 +404,7 @@ function App() {
     setError(null);
     setSaved(false);
     setCopied(false);
+    setCopyFailed(false);
     setShowDetails(false);
     setRefineInput("");
     setMobileRefineOpen(false);
@@ -430,6 +432,7 @@ function App() {
     setRefining(true);
     setError(null);
     setCopied(false);
+    setCopyFailed(false);
     setSaved(false);
 
     try {
@@ -480,6 +483,7 @@ function App() {
     setFallback(null);
     setShowDetails(false);
     setCopied(false);
+    setCopyFailed(false);
     setSaved(false);
     setRefineInput("");
     setRefining(false);
@@ -856,12 +860,18 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          navigator.clipboard.writeText(window.location.origin + tool.toolUrl);
+                        onClick={async (e) => {
                           const btn = e.currentTarget;
-                          btn.textContent = "\u2713 Copied!";
-                          btn.className = "text-[var(--color-ember)] bg-[#FFF7ED] rounded px-1 transition-colors text-xs";
-                          setTimeout(() => { btn.textContent = "Share"; btn.className = "text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"; }, 2000);
+                          const resetClass = "text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100";
+                          try {
+                            await navigator.clipboard.writeText(window.location.origin + tool.toolUrl);
+                            btn.textContent = "\u2713 Copied!";
+                            btn.className = "text-[var(--color-ember)] bg-[#FFF7ED] rounded px-1 transition-colors text-xs";
+                          } catch {
+                            btn.textContent = "Failed";
+                            btn.className = "text-[#DC2626] transition-colors text-xs";
+                          }
+                          setTimeout(() => { btn.textContent = "Share"; btn.className = resetClass; }, 2000);
                         }}
                         className="text-[var(--color-ink-muted)] hover:text-[var(--color-ember)] transition-colors text-xs md:opacity-0 md:group-hover:opacity-100"
                         title="Copy share link"
@@ -964,18 +974,25 @@ function App() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.origin + toolUrl);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(window.location.origin + toolUrl);
+                          setCopied(true);
+                          setCopyFailed(false);
+                        } catch {
+                          setCopyFailed(true);
+                        }
+                        setTimeout(() => { setCopied(false); setCopyFailed(false); }, 2000);
                       }}
                       className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${
                         copied
                           ? "bg-[#F0FDF4] border border-[#86EFAC] text-[#166534]"
+                          : copyFailed
+                          ? "bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626]"
                           : "border border-[#D6D3D1] hover:border-[#C2410C] hover:text-[#C2410C]"
                       }`}
                     >
-                      {copied ? "\u2713 Copied!" : "Share"}
+                      {copied ? "\u2713 Copied!" : copyFailed ? "Failed" : "Share"}
                     </button>
                   </div>
                 )}
@@ -1420,9 +1437,18 @@ function App() {
             </button>
           )}
           {toolUrl && (
-            <button type="button" onClick={() => { navigator.clipboard.writeText(window.location.origin + toolUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className={`flex flex-col items-center gap-0.5 transition-colors ${copied ? "text-[#166534]" : "text-[#78716C] active:text-[#C2410C]"}`}>
+            <button type="button" onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(window.location.origin + toolUrl);
+                setCopied(true);
+                setCopyFailed(false);
+              } catch {
+                setCopyFailed(true);
+              }
+              setTimeout(() => { setCopied(false); setCopyFailed(false); }, 2000);
+            }} className={`flex flex-col items-center gap-0.5 transition-colors ${copied ? "text-[#166534]" : copyFailed ? "text-[#DC2626]" : "text-[#78716C] active:text-[#C2410C]"}`}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 7V4H14V11H11M4 7H11V14H4V7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="text-[10px] font-medium">{copied ? "Copied" : "Share"}</span>
+              <span className="text-[10px] font-medium">{copied ? "Copied" : copyFailed ? "Failed" : "Share"}</span>
             </button>
           )}
           {code && (
