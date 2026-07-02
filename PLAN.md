@@ -93,5 +93,33 @@
 
 - [x] `handleLoadTool` fetches `/tool/:runId` which the server enriches with OG meta tags and a "Built with Yukti" footer before returning. The footer then renders inside the iframe — freshly generated tools never show this footer, so the experience is inconsistent. Fixed: `handleLoadTool` now fetches `/tool/:runId?embed=1`; the `/tool/:runId` handler (server.ts) skips OG tags and footer injection when `url.searchParams.get("embed") === "1"`, returning raw tool HTML for the in-app iframe.
 
+## P2: Recurring bugs (continued 10)
+
+- [ ] `handleRefine()` not integrated with `abortControllerRef` (client.tsx:430): `generate()` aborts any in-flight generation via the ref, but `handleRefine()` creates no AbortController and never registers with it. If the user triggers `generate()` while a refine is in flight, `generate()` clears `html`/`code`/`runId` to null then starts streaming — but the stale refine response can arrive and overwrite those nulled states with the old HTML/code, displaying the wrong tool.
+
+- [ ] `/api/refine` malformed request body returns 500 instead of 400 (server.ts:422): `request.json()` is inside the outer try-catch, so a bad JSON body gets caught by the outer handler and returns status 500 with the raw parse error. Every other POST (`/api/stream`, `/api/me/tools`) has a dedicated inner try-catch for `request.json()` returning 400. `/api/refine` and `/api/rerun` (server.ts:597) still have the old pattern.
+
+- [ ] No input length limits on user-controlled string fields (server.ts:235,422,597): `topic`, `originalCode`, `instruction`, and `code` fields have only presence checks but no max-length guard. An attacker can send a 500KB topic or 1MB code string — billing every token to the API key and potentially hitting worker CPU limits.
+
+## P2: Security fixes (continued 2)
+
+- [ ] `/api/me/tools` POST accepts unvalidated `runId` and `toolUrl` from the client body (server.ts:176): the PLAN.md `^[a-z0-9]{8}$` guard was applied to `/tool/` and `/api/run/` lookups but not here. An attacker can POST any `toolUrl` string which gets stored in their user KV entry; `handleLoadTool` then calls `fetch(tool.toolUrl)` with that URL, causing the browser to request an attacker-controlled origin. Fix: validate `runId` matches `^[a-z0-9]{8}$` and that `toolUrl` starts with `/tool/` before storing.
+
+## P3: Resilience (continued)
+
+- [ ] `DATA_GOV_KEY` hardcoded in source (server.ts:699): the India commodity-prices API key is a literal string in source, unlike `GOOGLE_API_KEY` which correctly reads from `hostEnv`. Commits to source control expose the key; rotation requires a code change and redeploy. Move to `env.DATA_GOV_KEY` with a fallback to the current literal, and add `DATA_GOV_KEY` to `wrangler.toml` / env bindings.
+
+- [ ] `sanitizeCode()` only strips empty-body external script tags (validate.ts:107): the regex requires `>\s*</script>` — a non-empty body like `// polyfill` bypasses the strip. LLM-generated `<script src="https://cdn.../lib.js">// fallback</script>` loads in the tool sandbox unblocked. Fix: allow any content between the tags (`[\s\S]*?`) in the CDN-script regex.
+
+## P4: UX polish
+
+- [ ] NaN in timing panels after refine or refresh (client.tsx:1203,1522): `/api/refine` response has `meta.timing = { llmMs, totalMs }` (no `execMs`); `/api/rerun` has `meta.timing = { execMs }` (no `llmMs`/`totalMs`). All three Inspector timing displays call `.toFixed(1)` on all fields unconditionally, producing "NaNs" after a refine or refresh. Fix: guard each timing field with `meta.timing.xxxMs != null` before rendering.
+
+- [ ] `handleLoadTool` catch has no `console.warn` (client.tsx:422): unlike `handleSave` and `handleRemoveTool` (fixed in P2 Observability), this catch calls `setError()` for the user but logs nothing — network failures or server errors are invisible in devtools. Add `console.warn` with toolUrl and err.
+
+- [ ] `submitQuery` clarify catch swallows errors silently (client.tsx:630): bare `catch {}` on the entire clarify fetch — correct to fail open, but no `console.warn` means a broken `/api/clarify` is undetectable in production devtools.
+
+- [ ] `BuildingPipeline` staggered `setTimeout` callbacks lack cleanup (client.tsx:127): the `useEffect` that schedules staggered narrative-line reveals returns no cleanup. If the stage changes before the timeouts fire, old stage lines append after new stage lines, scrambling the order. Return a cleanup function that calls `clearTimeout` on all queued IDs.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
