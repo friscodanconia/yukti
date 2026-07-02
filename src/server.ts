@@ -508,6 +508,13 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
         try {
           const { value: html, metadata } = await env.TOOLS_KV.getWithMetadata<{ topic?: string }>("tool:" + runId);
           if (html) {
+            // ?embed=1 is used by handleLoadTool in the app — return raw HTML
+            // without OG tags or footer so they don't render inside the iframe.
+            if (url.searchParams.get("embed") === "1") {
+              return new Response(html, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+              });
+            }
             const topic = escapeHtml(metadata?.topic || "Interactive Tool");
             const ogTags = `<meta property="og:title" content="Yukti — ${topic}">
 <meta property="og:description" content="Interactive tool built on the fly by Yukti">

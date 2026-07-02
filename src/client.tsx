@@ -413,7 +413,7 @@ function App() {
     setRunId(tool.runId);
     setToolUrl(tool.toolUrl);
     try {
-      const res = await fetch(tool.toolUrl);
+      const res = await fetch(tool.toolUrl + "?embed=1");
       if (res.ok) {
         const loadedHtml = await res.text();
         setHtml(loadedHtml);

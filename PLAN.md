@@ -89,5 +89,9 @@
 - [x] SSE loop doesn't check abort signal inside the event-processing `for` loop (client.tsx:530-578): between when `abort()` is called and when `reader.read()` next throws AbortError, the `for(const part of parts)` loop can still process a buffered "complete" event and call `setHtml(oldHtml)`, `setCode(oldCode)`, etc. — overwriting state the new `generate()` just reset to `null`. Fixed: added `if (controller.signal.aborted) break` at the top of the `while` loop and at the start of the `for` loop so stale events are discarded immediately on abort.
 - [x] Clipboard API without `.catch()` in My Tools share button (client.tsx:858), inspector share button (client.tsx:966), and mobile action bar share button (client.tsx:1421): `navigator.clipboard.writeText()` is called without awaiting or catching — on clipboard permission denial (incognito, non-HTTPS, or sandboxed contexts) the promise rejects silently and the UI still shows "✓ Copied!" even though nothing was copied. Fixed: all three handlers are now `async`, `await` the clipboard write, and use try/catch — success shows the existing green "✓ Copied!" state, failure shows a red "Failed" state (DOM-class swap for My Tools, new `copyFailed` state for Inspector and mobile); added `setCopyFailed(false)` resets in `handleLoadTool`, `handleRefine`, and `generate()`.
 
+## P2: Recurring bugs (continued 9)
+
+- [x] `handleLoadTool` fetches `/tool/:runId` which the server enriches with OG meta tags and a "Built with Yukti" footer before returning. The footer then renders inside the iframe — freshly generated tools never show this footer, so the experience is inconsistent. Fixed: `handleLoadTool` now fetches `/tool/:runId?embed=1`; the `/tool/:runId` handler (server.ts) skips OG tags and footer injection when `url.searchParams.get("embed") === "1"`, returning raw tool HTML for the in-app iframe.
+
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
