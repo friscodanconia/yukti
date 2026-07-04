@@ -95,7 +95,7 @@
 
 ## P2: Recurring bugs (continued 10)
 
-- [ ] `handleRefine()` not integrated with `abortControllerRef` (client.tsx:430): `generate()` aborts any in-flight generation via the ref, but `handleRefine()` creates no AbortController and never registers with it. If the user triggers `generate()` while a refine is in flight, `generate()` clears `html`/`code`/`runId` to null then starts streaming — but the stale refine response can arrive and overwrite those nulled states with the old HTML/code, displaying the wrong tool.
+- [x] `handleRefine()` not integrated with `abortControllerRef` (client.tsx:430): `generate()` aborts any in-flight generation via the ref, but `handleRefine()` creates no AbortController and never registers with it. If the user triggers `generate()` while a refine is in flight, `generate()` clears `html`/`code`/`runId` to null then starts streaming — but the stale refine response can arrive and overwrite those nulled states with the old HTML/code, displaying the wrong tool.
 
 - [ ] `/api/refine` malformed request body returns 500 instead of 400 (server.ts:422): `request.json()` is inside the outer try-catch, so a bad JSON body gets caught by the outer handler and returns status 500 with the raw parse error. Every other POST (`/api/stream`, `/api/me/tools`) has a dedicated inner try-catch for `request.json()` returning 400. `/api/refine` and `/api/rerun` (server.ts:597) still have the old pattern.
 

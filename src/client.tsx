@@ -429,6 +429,14 @@ function App() {
 
   const handleRefine = async () => {
     if (!refineInput.trim() || !code) return;
+
+    // Cancel any in-flight generation or prior refine before starting
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setRefining(true);
     setError(null);
     setCopied(false);
@@ -438,6 +446,7 @@ function App() {
     try {
       const res = await fetch("/api/refine", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, instruction: refineInput, topic: query }),
       });
@@ -456,9 +465,14 @@ function App() {
         setError(data.error || "Refinement failed");
       }
     } catch (err) {
+      // Ignore errors from requests we intentionally cancelled
+      if (err instanceof Error && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
-      setRefining(false);
+      // Only clean up refining state if this request wasn't superseded by a newer one
+      if (!controller.signal.aborted) {
+        setRefining(false);
+      }
     }
   };
 
