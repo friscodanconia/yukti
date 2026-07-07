@@ -418,15 +418,19 @@ export default {
 
     // ── API: Refine an existing tool ──────────────────────────
     if (url.pathname === "/api/refine" && request.method === "POST") {
+      let refineBody: { code: string; instruction: string; topic: string };
       try {
-        const { code: originalCode, instruction, topic } = await request.json<{
-          code: string; instruction: string; topic: string;
-        }>();
+        refineBody = await request.json<{ code: string; instruction: string; topic: string }>();
+      } catch {
+        return Response.json({ error: "Invalid request body" }, { status: 400 });
+      }
+      const { code: originalCode, instruction, topic } = refineBody;
 
-        if (!originalCode || !instruction) {
-          return Response.json({ error: "code and instruction are required" }, { status: 400 });
-        }
+      if (!originalCode || !instruction) {
+        return Response.json({ error: "code and instruction are required" }, { status: 400 });
+      }
 
+      try {
         const runId = generateRunId();
         const totalStart = Date.now();
 
@@ -600,12 +604,18 @@ calc();
 
     // ── API: Rerun existing code (live refresh) ────────────────
     if (url.pathname === "/api/rerun" && request.method === "POST") {
+      let rerunBody: { code: string; topic: string };
       try {
-        const { code, topic } = await request.json<{ code: string; topic: string }>();
-        if (!code) {
-          return Response.json({ error: "code is required" }, { status: 400 });
-        }
+        rerunBody = await request.json<{ code: string; topic: string }>();
+      } catch {
+        return Response.json({ error: "Invalid request body" }, { status: 400 });
+      }
+      const { code, topic } = rerunBody;
+      if (!code) {
+        return Response.json({ error: "code is required" }, { status: 400 });
+      }
 
+      try {
         const runId = generateRunId();
         const start = Date.now();
         const { html: rawHtml, granted } = await executeInWorker(env, code, topic);
