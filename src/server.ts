@@ -235,6 +235,9 @@ export default {
       if (!topic?.trim()) {
         return Response.json({ error: "Topic is required" }, { status: 400 });
       }
+      if (topic.length > 2000) {
+        return Response.json({ error: "Topic must be 2000 characters or fewer" }, { status: 400 });
+      }
       if (!env.OPENROUTER_API_KEY) {
         return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 500 });
       }
@@ -429,6 +432,12 @@ export default {
       if (!originalCode || !instruction) {
         return Response.json({ error: "code and instruction are required" }, { status: 400 });
       }
+      if (originalCode.length > 100_000) {
+        return Response.json({ error: "code must be 100,000 characters or fewer" }, { status: 400 });
+      }
+      if (instruction.length > 2000) {
+        return Response.json({ error: "instruction must be 2,000 characters or fewer" }, { status: 400 });
+      }
 
       try {
         const runId = generateRunId();
@@ -613,6 +622,9 @@ calc();
       const { code, topic } = rerunBody;
       if (!code) {
         return Response.json({ error: "code is required" }, { status: 400 });
+      }
+      if (code.length > 100_000) {
+        return Response.json({ error: "code must be 100,000 characters or fewer" }, { status: 400 });
       }
 
       try {

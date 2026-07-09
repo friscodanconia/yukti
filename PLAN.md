@@ -99,7 +99,7 @@
 
 - [x] `/api/refine` malformed request body returns 500 instead of 400 (server.ts:422): `request.json()` is inside the outer try-catch, so a bad JSON body gets caught by the outer handler and returns status 500 with the raw parse error. Every other POST (`/api/stream`, `/api/me/tools`) has a dedicated inner try-catch for `request.json()` returning 400. `/api/refine` and `/api/rerun` (server.ts:597) still have the old pattern. Fixed: both endpoints now have a dedicated try-catch for `request.json()` that returns 400.
 
-- [ ] No input length limits on user-controlled string fields (server.ts:235,422,597): `topic`, `originalCode`, `instruction`, and `code` fields have only presence checks but no max-length guard. An attacker can send a 500KB topic or 1MB code string — billing every token to the API key and potentially hitting worker CPU limits.
+- [x] No input length limits on user-controlled string fields (server.ts:235,422,597): `topic`, `originalCode`, `instruction`, and `code` fields have only presence checks but no max-length guard. An attacker can send a 500KB topic or 1MB code string — billing every token to the API key and potentially hitting worker CPU limits. Fixed: added `topic.length > 2000`, `instruction.length > 2000`, `originalCode.length > 100_000`, and `code.length > 100_000` guards returning 400 at all three endpoints.
 
 ## P2: Security fixes (continued 2)
 
