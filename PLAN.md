@@ -103,7 +103,7 @@
 
 ## P2: Security fixes (continued 2)
 
-- [ ] `/api/me/tools` POST accepts unvalidated `runId` and `toolUrl` from the client body (server.ts:176): the PLAN.md `^[a-z0-9]{8}$` guard was applied to `/tool/` and `/api/run/` lookups but not here. An attacker can POST any `toolUrl` string which gets stored in their user KV entry; `handleLoadTool` then calls `fetch(tool.toolUrl)` with that URL, causing the browser to request an attacker-controlled origin. Fix: validate `runId` matches `^[a-z0-9]{8}$` and that `toolUrl` starts with `/tool/` before storing.
+- [x] `/api/me/tools` POST accepts unvalidated `runId` and `toolUrl` from the client body (server.ts:176): the PLAN.md `^[a-z0-9]{8}$` guard was applied to `/tool/` and `/api/run/` lookups but not here. An attacker can POST any `toolUrl` string which gets stored in their user KV entry; `handleLoadTool` then calls `fetch(tool.toolUrl)` with that URL, causing the browser to request an attacker-controlled origin. Fixed: added `^[a-z0-9]{8}$` guard on `runId` and `/tool/` prefix check on `toolUrl`, both returning 400 before any KV write.
 
 ## P3: Resilience (continued)
 
