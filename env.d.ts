@@ -4,6 +4,7 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY: string;
     GOOGLE_API_KEY: string;
     GEMINI_API_KEY: string;
+    DATA_GOV_KEY: string;
     TOOLS_KV: KVNamespace;
   }
 }

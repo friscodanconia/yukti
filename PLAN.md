@@ -107,7 +107,7 @@
 
 ## P3: Resilience (continued)
 
-- [ ] `DATA_GOV_KEY` hardcoded in source (server.ts:699): the India commodity-prices API key is a literal string in source, unlike `GOOGLE_API_KEY` which correctly reads from `hostEnv`. Commits to source control expose the key; rotation requires a code change and redeploy. Move to `env.DATA_GOV_KEY` with a fallback to the current literal, and add `DATA_GOV_KEY` to `wrangler.toml` / env bindings.
+- [x] `DATA_GOV_KEY` hardcoded in source (server.ts:699): the India commodity-prices API key is a literal string in source, unlike `GOOGLE_API_KEY` which correctly reads from `hostEnv`. Commits to source control expose the key; rotation requires a code change and redeploy. Move to `env.DATA_GOV_KEY` with a fallback to the current literal, and add `DATA_GOV_KEY` to `wrangler.toml` / env bindings.
 
 - [ ] `sanitizeCode()` only strips empty-body external script tags (validate.ts:107): the regex requires `>\s*</script>` — a non-empty body like `// polyfill` bypasses the strip. LLM-generated `<script src="https://cdn.../lib.js">// fallback</script>` loads in the tool sandbox unblocked. Fix: allow any content between the tags (`[\s\S]*?`) in the CDN-script regex.
 

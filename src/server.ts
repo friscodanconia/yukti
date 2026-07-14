@@ -731,7 +731,7 @@ function selectCapabilities(topic: string, hostEnv: Env): { env: Record<string, 
 
   // India commodity prices
   if (/onion|tomato|potato|vegetable|grain|wheat|rice price|dal price|mandi|commodity/i.test(lower)) {
-    env.DATA_GOV_KEY = "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b";
+    env.DATA_GOV_KEY = hostEnv.DATA_GOV_KEY || "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b";
     granted.push("india-commodity-prices");
   }
 
