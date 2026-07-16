@@ -103,8 +103,8 @@ export function validateWorkerCode(code: string): ValidationResult {
  * The prompt tells LLMs not to use CDN imports, but this enforces it.
  */
 export function sanitizeCode(code: string): string {
-  // Remove <script src="..."> tags pointing to external URLs
-  return code.replace(/<script\s+[^>]*src\s*=\s*["'][^"']*["'][^>]*>\s*<\/script>/gi, "<!-- CDN script removed by sanitizer -->");
+  // Remove <script src="..."> tags pointing to external URLs (including non-empty bodies like fallback comments)
+  return code.replace(/<script\s+[^>]*src\s*=\s*["'][^"']*["'][^>]*>[\s\S]*?<\/script>/gi, "<!-- CDN script removed by sanitizer -->");
 }
 
 /**
