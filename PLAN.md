@@ -113,7 +113,7 @@
 
 ## P4: UX polish
 
-- [ ] NaN in timing panels after refine or refresh (client.tsx:1203,1522): `/api/refine` response has `meta.timing = { llmMs, totalMs }` (no `execMs`); `/api/rerun` has `meta.timing = { execMs }` (no `llmMs`/`totalMs`). All three Inspector timing displays call `.toFixed(1)` on all fields unconditionally, producing "NaNs" after a refine or refresh. Fix: guard each timing field with `meta.timing.xxxMs != null` before rendering.
+- [x] NaN in timing panels after refine or refresh (client.tsx:1203,1522): `/api/refine` response has `meta.timing = { llmMs, totalMs }` (no `execMs`); `/api/rerun` has `meta.timing = { execMs }` (no `llmMs`/`totalMs`). All three Inspector timing displays call `.toFixed(1)` on all fields unconditionally, producing "NaNs" after a refine or refresh. Fix: guard each timing field with `meta.timing.xxxMs != null` before rendering.
 
 - [ ] `handleLoadTool` catch has no `console.warn` (client.tsx:422): unlike `handleSave` and `handleRemoveTool` (fixed in P2 Observability), this catch calls `setError()` for the user but logs nothing — network failures or server errors are invisible in devtools. Add `console.warn` with toolUrl and err.
 

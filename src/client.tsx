@@ -1214,10 +1214,10 @@ function App() {
                             )}
                             {meta?.timing && (
                               <>
-                                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
-                                <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
+                                {meta.timing.llmMs != null && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>}
+                                {meta.timing.execMs != null && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>}
                                 {meta.retried && <div className="flex justify-between text-[#FBBF24]"><span>Retried</span><span>Yes</span></div>}
-                                <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
+                                {meta.timing.totalMs != null && <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>}
                               </>
                             )}
                             {meta?.domainsFetched && meta.domainsFetched.length > 0 && (
@@ -1533,9 +1533,9 @@ function App() {
                 {meta?.queryType && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Query Type</span><span className="px-1.5 py-0.5 bg-[#3B2F2F] rounded text-[10px] font-medium text-[#FBBF24]">{meta.queryType}</span></div>}
                 {meta?.timing && (
                   <>
-                    <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
-                    <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
-                    <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
+                    {meta.timing.llmMs != null && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">LLM Time</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>}
+                    {meta.timing.execMs != null && <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Sandbox Time</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>}
+                    {meta.timing.totalMs != null && <div className="flex justify-between font-medium"><span className="text-[var(--color-ink-muted)]">Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>}
                   </>
                 )}
                 {meta?.granted && meta.granted.length > 0 && (
