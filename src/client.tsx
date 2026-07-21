@@ -420,7 +420,8 @@ function App() {
       } else {
         setError("Tool expired or not found");
       }
-    } catch {
+    } catch (err) {
+      console.warn("handleLoadTool failed for", tool.toolUrl, err);
       setError("Failed to load saved tool");
     } finally {
       setLoading(false);
