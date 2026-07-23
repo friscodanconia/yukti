@@ -117,7 +117,7 @@
 
 - [x] `handleLoadTool` catch has no `console.warn` (client.tsx:422): unlike `handleSave` and `handleRemoveTool` (fixed in P2 Observability), this catch calls `setError()` for the user but logs nothing — network failures or server errors are invisible in devtools. Add `console.warn` with toolUrl and err.
 
-- [ ] `submitQuery` clarify catch swallows errors silently (client.tsx:630): bare `catch {}` on the entire clarify fetch — correct to fail open, but no `console.warn` means a broken `/api/clarify` is undetectable in production devtools.
+- [x] `submitQuery` clarify catch swallows errors silently (client.tsx:630): bare `catch {}` on the entire clarify fetch — correct to fail open, but no `console.warn` means a broken `/api/clarify` is undetectable in production devtools.
 
 - [ ] `BuildingPipeline` staggered `setTimeout` callbacks lack cleanup (client.tsx:127): the `useEffect` that schedules staggered narrative-line reveals returns no cleanup. If the stage changes before the timeouts fire, old stage lines append after new stage lines, scrambling the order. Return a cleanup function that calls `clearTimeout` on all queued IDs.
 

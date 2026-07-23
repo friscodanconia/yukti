@@ -642,8 +642,8 @@ function App() {
         setClarifying(false);
         return; // show clarification UI
       }
-    } catch {
-      // fail open — just build
+    } catch (err) {
+      console.warn("[submitQuery] /api/clarify failed — falling back to direct generate:", err);
     }
 
     setClarifying(false);
