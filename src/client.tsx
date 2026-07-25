@@ -131,21 +131,25 @@ function BuildingPipeline({ currentStage, onBackground, query }: { currentStage:
     const stageNarrative = NARRATIVE[currentStage];
     if (!stageNarrative) return;
 
+    const ids: ReturnType<typeof setTimeout>[] = [];
+
     // Reveal lines with staggered delay
     stageNarrative.lines.forEach((line, i) => {
-      setTimeout(() => {
+      ids.push(setTimeout(() => {
         setRevealedLines(prev => [...prev, line]);
-      }, i * 2000);
+      }, i * 2000));
     });
 
     // Reveal capability pills with stagger
     if (stageNarrative.caps) {
       stageNarrative.caps.forEach((cap, i) => {
-        setTimeout(() => {
+        ids.push(setTimeout(() => {
           setCapabilities(prev => prev.includes(cap) ? prev : [...prev, cap]);
-        }, 800 + i * 600);
+        }, 800 + i * 600));
       });
     }
+
+    return () => ids.forEach(clearTimeout);
   }, [currentStage]);
 
   useEffect(() => {

@@ -119,7 +119,7 @@
 
 - [x] `submitQuery` clarify catch swallows errors silently (client.tsx:630): bare `catch {}` on the entire clarify fetch — correct to fail open, but no `console.warn` means a broken `/api/clarify` is undetectable in production devtools.
 
-- [ ] `BuildingPipeline` staggered `setTimeout` callbacks lack cleanup (client.tsx:127): the `useEffect` that schedules staggered narrative-line reveals returns no cleanup. If the stage changes before the timeouts fire, old stage lines append after new stage lines, scrambling the order. Return a cleanup function that calls `clearTimeout` on all queued IDs.
+- [x] `BuildingPipeline` staggered `setTimeout` callbacks lack cleanup (client.tsx:127): the `useEffect` that schedules staggered narrative-line reveals returns no cleanup. If the stage changes before the timeouts fire, old stage lines append after new stage lines, scrambling the order. Return a cleanup function that calls `clearTimeout` on all queued IDs.
 
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
