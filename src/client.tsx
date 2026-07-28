@@ -1023,17 +1023,17 @@ function App() {
                   className="w-full px-5 py-2.5 text-left text-xs text-[#9B9B9B] hover:text-[#57534E] transition-colors flex justify-between items-center"
                 >
                   <span>{meta ? meta.model.split("/").pop() : ""}</span>
-                  <span>{meta?.timing ? (meta.timing.totalMs / 1000).toFixed(1) + "s" : ""}</span>
+                  <span>{meta?.timing?.totalMs != null ? (meta.timing.totalMs / 1000).toFixed(1) + "s" : ""}</span>
                 </button>
 
                 {showDetails && meta?.timing && (
                   <div className="px-5 pb-3 text-xs text-[#9B9B9B] space-y-1">
-                    <div className="flex justify-between"><span>LLM generation</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>
-                    <div className="flex justify-between"><span>Sandbox execution</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>
+                    {meta.timing.llmMs != null && <div className="flex justify-between"><span>LLM generation</span><span>{(meta.timing.llmMs / 1000).toFixed(1)}s</span></div>}
+                    {meta.timing.execMs != null && <div className="flex justify-between"><span>Sandbox execution</span><span>{(meta.timing.execMs / 1000).toFixed(1)}s</span></div>}
                     {meta.retried && meta.timing.retryLlmMs && (
                       <div className="flex justify-between text-[#D97706]"><span>Retry (code fix)</span><span>{(meta.timing.retryLlmMs / 1000).toFixed(1)}s</span></div>
                     )}
-                    <div className="flex justify-between font-medium text-[#57534E]"><span>Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>
+                    {meta.timing.totalMs != null && <div className="flex justify-between font-medium text-[#57534E]"><span>Total</span><span>{(meta.timing.totalMs / 1000).toFixed(1)}s</span></div>}
                     {runId && <div className="mt-1 text-[10px] font-mono text-[var(--color-ink-muted)]">Run: {runId}</div>}
                   </div>
                 )}
@@ -1169,6 +1169,7 @@ function App() {
                                 setToolUrl(data.toolUrl as string | null);
                                 setSaved(false);
                                 setCopied(false);
+                                if (data.meta) setMeta(data.meta as typeof meta);
                               }
                             } catch (err) {
                               setError(err instanceof Error ? err.message : "Refresh failed");

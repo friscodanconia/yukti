@@ -123,3 +123,37 @@
 
 ## P4: Done
 - [x] Uncommitted changes committed (working tree is clean as of session start)
+
+## P2: Security / input validation (continued)
+
+- [x] `/api/clarify` missing `topic.length > 2000` guard (server.ts:208): every other POST endpoint (`/api/stream`, `/api/refine`, `/api/rerun`) received the length cap in the previous input-validation fix, but `/api/clarify` was missed. An unauthenticated attacker can POST a 1 MB topic repeatedly to burn OpenRouter API budget at `fast`-tier cost. Fixed: added `topic.length > 2000` guard returning `{ action: "build" }` (fail-open, same as the other error paths).
+
+- [x] `getUserData` returns raw KV parse result — `tools.filter()` crashes on corrupted records (server.ts:126): `getUserData` returns `JSON.parse(raw)` without checking that `tools` is actually an array. If KV ever stores `{ tools: null }` (partial write, manual edit, migration bug), callers at lines 185 and 200 call `.filter()` on a non-array and throw a 500. Fixed: added `Array.isArray(parsed.tools)` guard in `getUserData`; resets to `[]` if corrupted.
+
+## P2: UX bugs
+
+- [x] Sidebar timing shows "NaN s" after refine or refresh (client.tsx:1031–1036): the inspector NaN fix (previous PLAN.md task) only covered the inspector panel, not the sidebar expand-details section. Lines 1031–1032 called `.toFixed(1)` on `llmMs` and `execMs` unconditionally; line 1036 did the same for `totalMs`; line 1026 showed the button-label time. Fixed: guarded all four with `!= null` checks (or `?.` on the button label), matching the inspector pattern.
+
+- [x] Desktop Refresh button never calls `setMeta()` — inspector shows stale metadata after every refresh (client.tsx:1166): `/api/rerun` returns `meta: { timing: { execMs }, granted }` but the click handler only called `setHtml`, `setRunId`, `setToolUrl`, `setSaved`, `setCopied`. After refresh the inspector still shows the original generation's model, LLM timing, and tier. Fixed: added `if (data.meta) setMeta(data.meta)` after the existing state updates.
+
+## P2: Privacy
+
+- [ ] `/api/stats` publicly exposes all user queries (server.ts:686): the endpoint has no auth check and returns `recentQueries` — the last 50 raw topic strings from all users. Topics commonly contain personal financial data (income, loan amounts, family details). Fix: either remove `recentQueries` from the public response, or add an admin-secret check before returning it.
+
+## P3: Security
+
+- [ ] Gemini `mimeType` injected raw into `src` data URI without escaping (server.ts:69): `return \`data:${part.inlineData.mimeType};base64,...\`` — if mimeType contains a double-quote, it breaks out of the `src` attribute and creates an XSS vector. The `startsWith("data:image/")` guard on the assembled string prevents null/non-image cases but not attribute-breaking chars within a valid image mimeType. Fix: validate/sanitize `mimeType` before using it (e.g. `if (!/^image\/[a-zA-Z0-9+.-]+$/.test(mimeType)) return html`).
+
+- [ ] `uid` cookie missing `Secure` flag (server.ts:148): `Set-Cookie` header lacks `; Secure`, so browsers may transmit the session cookie over plain HTTP. Add `; Secure` to the cookie header.
+
+- [ ] `uid` cookie value not validated as UUID (server.ts:139): an attacker-supplied cookie value is used verbatim as `user:${uid}` KV key with no format check. An overlong value (> ~500 bytes) causes KV puts to fail with an unhandled error (500). A value matching another user's known UUID enables saved-tool read/overwrite. Fix: validate `uid` matches `^[0-9a-f-]{36}$` (UUID v4 format); if not, treat as new user and mint a fresh UUID.
+
+## P3: Resilience
+
+- [ ] KV analytics counter read-write race — increments dropped under concurrent load (server.ts:1035): the `read → increment → write` pattern is non-atomic. Two concurrent requests both read 42, both write 43 — one increment is lost. Also, if a non-integer value is ever stored, `parseInt` returns `NaN`, which then propagates as the stored value, permanently corrupting the counter. Fix: add `|| 0` fallback after `parseInt` to prevent NaN propagation (`parseInt(...) || 0`); document the non-atomic limitation with a comment (true atomic increment requires Durable Objects).
+
+- [ ] `resetToHome()` omits `setClarifyQuestions` / `setClarifying` — stale clarify UI can reappear (client.tsx:353): if the user navigates back while `/api/clarify` is in-flight, `resetToHome` clears html/code/meta but leaves `clarifyQuestions` and `clarifying` set. When the in-flight fetch resolves, `setClarifyQuestions` fires and the clarify question sheet renders unexpectedly over the home screen. Fix: add `setClarifyQuestions(null)`, `setClarifying(false)`, `setClarifyAnswers({})`, `setClarifyCustomInputs({})` to `resetToHome()`.
+
+## P4: Code quality
+
+- [ ] Example 2 in `prompt.ts` uses a template literal while Example 1 uses `+` concatenation (llm/prompt.ts:397): the system prompt instructs the LLM not to use backticks inside the outer template literal, yet Example 2 wraps its HTML in a nested template literal. The LLM imitates the nearest example — Example 2 primes it to use template literals and increases the first-attempt backtick-nesting failure rate. Fix: rewrite Example 2 using `+` concatenation to match Example 1.

@@ -126,7 +126,12 @@ function getCookie(request: Request, name: string): string | null {
 async function getUserData(env: Env, uid: string): Promise<{ tools: any[]; createdAt: string }> {
   try {
     const raw = await env.TOOLS_KV.get(`user:${uid}`);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Guard against corrupted KV data where tools is not an array
+      if (!Array.isArray(parsed.tools)) parsed.tools = [];
+      return parsed;
+    }
   } catch (err) {
     console.warn(`[getUserData] KV read/parse failed for uid=${uid}:`, err);
   }
@@ -208,6 +213,9 @@ export default {
         const { topic } = await request.json<{ topic: string }>();
         if (!topic?.trim()) {
           return Response.json({ action: "build" });
+        }
+        if (topic.length > 2000) {
+          return Response.json({ action: "build" }); // oversized — skip clarify, let /api/stream reject
         }
         if (!env.OPENROUTER_API_KEY) {
           return Response.json({ action: "build" }); // fail open
