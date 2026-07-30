@@ -138,7 +138,7 @@
 
 ## P2: Privacy
 
-- [ ] `/api/stats` publicly exposes all user queries (server.ts:686): the endpoint has no auth check and returns `recentQueries` — the last 50 raw topic strings from all users. Topics commonly contain personal financial data (income, loan amounts, family details). Fix: either remove `recentQueries` from the public response, or add an admin-secret check before returning it.
+- [x] `/api/stats` publicly exposes all user queries (server.ts:686): the endpoint has no auth check and returns `recentQueries` — the last 50 raw topic strings from all users. Topics commonly contain personal financial data (income, loan amounts, family details). Fixed: removed `recentQueries` from the public response and skipped the KV fetch entirely — aggregate counters (generations, refines, failures, successRate) are still returned.
 
 ## P3: Security
 

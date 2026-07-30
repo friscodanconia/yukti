@@ -694,13 +694,10 @@ calc();
     if (url.pathname === "/api/stats") {
       if (!env.TOOLS_KV) return Response.json({ error: "KV not configured" });
       try {
-        const [totalGenerations, totalRefines, totalFailures, recentQueries] = await Promise.all([
+        const [totalGenerations, totalRefines, totalFailures] = await Promise.all([
           env.TOOLS_KV.get("stats:generations").then(v => parseInt(v || "0")),
           env.TOOLS_KV.get("stats:refines").then(v => parseInt(v || "0")),
           env.TOOLS_KV.get("stats:failures").then(v => parseInt(v || "0")),
-          env.TOOLS_KV.get("stats:recent").then(v => {
-            try { return JSON.parse(v || "[]"); } catch { return []; }
-          }),
         ]);
         return Response.json({
           totalGenerations,
@@ -709,7 +706,6 @@ calc();
           successRate: totalGenerations > 0
             ? ((totalGenerations - totalFailures) / totalGenerations * 100).toFixed(1) + "%"
             : "N/A",
-          recentQueries,
         });
       } catch {
         return Response.json({ error: "Failed to read stats" });
