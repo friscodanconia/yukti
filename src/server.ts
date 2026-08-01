@@ -67,7 +67,9 @@ async function generateGeminiImage(apiKey: string, query: string): Promise<strin
 
     for (const part of parts) {
       if (part.inlineData?.data) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        const mimeType = part.inlineData.mimeType;
+        if (!/^image\/[a-zA-Z0-9+.-]+$/.test(mimeType)) return null;
+        return `data:${mimeType};base64,${part.inlineData.data}`;
       }
     }
     return null;

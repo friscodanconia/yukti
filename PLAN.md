@@ -142,7 +142,7 @@
 
 ## P3: Security
 
-- [ ] Gemini `mimeType` injected raw into `src` data URI without escaping (server.ts:69): `return \`data:${part.inlineData.mimeType};base64,...\`` — if mimeType contains a double-quote, it breaks out of the `src` attribute and creates an XSS vector. The `startsWith("data:image/")` guard on the assembled string prevents null/non-image cases but not attribute-breaking chars within a valid image mimeType. Fix: validate/sanitize `mimeType` before using it (e.g. `if (!/^image\/[a-zA-Z0-9+.-]+$/.test(mimeType)) return html`).
+- [x] Gemini `mimeType` injected raw into `src` data URI without escaping (server.ts:69): `return \`data:${part.inlineData.mimeType};base64,...\`` — if mimeType contains a double-quote, it breaks out of the `src` attribute and creates an XSS vector. The `startsWith("data:image/")` guard on the assembled string prevents null/non-image cases but not attribute-breaking chars within a valid image mimeType. Fixed: validate `mimeType` with `!/^image\/[a-zA-Z0-9+.-]+$/.test(mimeType)` guard before constructing the data URI — return `null` (skip image injection) if mimeType is malformed.
 
 - [ ] `uid` cookie missing `Secure` flag (server.ts:148): `Set-Cookie` header lacks `; Secure`, so browsers may transmit the session cookie over plain HTTP. Add `; Secure` to the cookie header.
 
