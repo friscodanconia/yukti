@@ -144,7 +144,7 @@
 
 - [x] Gemini `mimeType` injected raw into `src` data URI without escaping (server.ts:69): `return \`data:${part.inlineData.mimeType};base64,...\`` — if mimeType contains a double-quote, it breaks out of the `src` attribute and creates an XSS vector. The `startsWith("data:image/")` guard on the assembled string prevents null/non-image cases but not attribute-breaking chars within a valid image mimeType. Fixed: validate `mimeType` with `!/^image\/[a-zA-Z0-9+.-]+$/.test(mimeType)` guard before constructing the data URI — return `null` (skip image injection) if mimeType is malformed.
 
-- [ ] `uid` cookie missing `Secure` flag (server.ts:148): `Set-Cookie` header lacks `; Secure`, so browsers may transmit the session cookie over plain HTTP. Add `; Secure` to the cookie header.
+- [x] `uid` cookie missing `Secure` flag (server.ts:148): `Set-Cookie` header lacks `; Secure`, so browsers may transmit the session cookie over plain HTTP. Add `; Secure` to the cookie header.
 
 - [ ] `uid` cookie value not validated as UUID (server.ts:139): an attacker-supplied cookie value is used verbatim as `user:${uid}` KV key with no format check. An overlong value (> ~500 bytes) causes KV puts to fail with an unhandled error (500). A value matching another user's known UUID enables saved-tool read/overwrite. Fix: validate `uid` matches `^[0-9a-f-]{36}$` (UUID v4 format); if not, treat as new user and mint a fresh UUID.
 

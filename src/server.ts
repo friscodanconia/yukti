@@ -152,7 +152,7 @@ export default {
     function withUserCookie(response: Response): Response {
       if (isNewUser) {
         const res = new Response(response.body, response);
-        res.headers.append("Set-Cookie", `yukti-uid=${uid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${86400 * 365}`);
+        res.headers.append("Set-Cookie", `yukti-uid=${uid}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${86400 * 365}`);
         return res;
       }
       return response;
