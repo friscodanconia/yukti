@@ -144,6 +144,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     // ── User identity via cookie ──────────────────────────────
     let uid = getCookie(request, "yukti-uid");
+    // Reject malformed values: prevent overlong KV keys and injection via cookie
+    const UUID_RE = /^[0-9a-f-]{36}$/;
+    if (uid && !UUID_RE.test(uid)) {
+      uid = null;
+    }
     const isNewUser = !uid;
     if (!uid) {
       uid = crypto.randomUUID();

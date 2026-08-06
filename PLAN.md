@@ -146,7 +146,7 @@
 
 - [x] `uid` cookie missing `Secure` flag (server.ts:148): `Set-Cookie` header lacks `; Secure`, so browsers may transmit the session cookie over plain HTTP. Add `; Secure` to the cookie header.
 
-- [ ] `uid` cookie value not validated as UUID (server.ts:139): an attacker-supplied cookie value is used verbatim as `user:${uid}` KV key with no format check. An overlong value (> ~500 bytes) causes KV puts to fail with an unhandled error (500). A value matching another user's known UUID enables saved-tool read/overwrite. Fix: validate `uid` matches `^[0-9a-f-]{36}$` (UUID v4 format); if not, treat as new user and mint a fresh UUID.
+- [x] `uid` cookie value not validated as UUID (server.ts:139): an attacker-supplied cookie value is used verbatim as `user:${uid}` KV key with no format check. An overlong value (> ~500 bytes) causes KV puts to fail with an unhandled error (500). A value matching another user's known UUID enables saved-tool read/overwrite. Fix: validate `uid` matches `^[0-9a-f-]{36}$` (UUID v4 format); if not, treat as new user and mint a fresh UUID.
 
 ## P3: Resilience
 
