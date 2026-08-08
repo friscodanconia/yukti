@@ -1041,9 +1041,12 @@ async function trackEvent(
 ) {
   if (!env.TOOLS_KV) return;
   try {
-    // Increment counter
+    // Increment counter. Note: read→increment→write is non-atomic; concurrent requests
+    // can both read the same value and both write the same result (one increment lost).
+    // True atomic increment would require Durable Objects. The || 0 prevents NaN
+    // propagation if KV ever stores a non-integer value.
     const counterKey = type === "failure" ? "stats:failures" : type === "refine" ? "stats:refines" : "stats:generations";
-    const current = parseInt(await env.TOOLS_KV.get(counterKey) || "0");
+    const current = parseInt(await env.TOOLS_KV.get(counterKey) || "0") || 0;
     await env.TOOLS_KV.put(counterKey, String(current + 1));
 
     // Store individual run record with 30-day TTL

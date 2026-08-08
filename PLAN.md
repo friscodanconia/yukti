@@ -150,7 +150,7 @@
 
 ## P3: Resilience
 
-- [ ] KV analytics counter read-write race — increments dropped under concurrent load (server.ts:1035): the `read → increment → write` pattern is non-atomic. Two concurrent requests both read 42, both write 43 — one increment is lost. Also, if a non-integer value is ever stored, `parseInt` returns `NaN`, which then propagates as the stored value, permanently corrupting the counter. Fix: add `|| 0` fallback after `parseInt` to prevent NaN propagation (`parseInt(...) || 0`); document the non-atomic limitation with a comment (true atomic increment requires Durable Objects).
+- [x] KV analytics counter read-write race — increments dropped under concurrent load (server.ts:1035): the `read → increment → write` pattern is non-atomic. Two concurrent requests both read 42, both write 43 — one increment is lost. Also, if a non-integer value is ever stored, `parseInt` returns `NaN`, which then propagates as the stored value, permanently corrupting the counter. Fix: add `|| 0` fallback after `parseInt` to prevent NaN propagation (`parseInt(...) || 0`); document the non-atomic limitation with a comment (true atomic increment requires Durable Objects).
 
 - [ ] `resetToHome()` omits `setClarifyQuestions` / `setClarifying` — stale clarify UI can reappear (client.tsx:353): if the user navigates back while `/api/clarify` is in-flight, `resetToHome` clears html/code/meta but leaves `clarifyQuestions` and `clarifying` set. When the in-flight fetch resolves, `setClarifyQuestions` fires and the clarify question sheet renders unexpectedly over the home screen. Fix: add `setClarifyQuestions(null)`, `setClarifying(false)`, `setClarifyAnswers({})`, `setClarifyCustomInputs({})` to `resetToHome()`.
 
