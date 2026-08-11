@@ -355,6 +355,8 @@ function App() {
     setRunId(null); setToolUrl(null); setQuery(""); setShowDetails(false);
     setRefineInput(""); setRefining(false); setMobileRefineOpen(false);
     setFallback(null);
+    setClarifyQuestions(null); setClarifying(false);
+    setClarifyAnswers({}); setClarifyCustomInputs({});
   };
 
   const handleSave = async () => {
