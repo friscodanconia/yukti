@@ -394,68 +394,61 @@ For "Is roti or rice healthier?":
 
 export default {
   fetch() {
-    const html = \`<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Roti vs Rice — Nutrition Comparison</title></head>
-<body>
-<h1>Roti vs Rice</h1>
-<p class="subtitle">Adjust portions to compare nutrition per meal</p>
-
-<div class="grid-2">
-  <div>
-    <h3>Roti (Wheat Chapati)</h3>
-    <div class="control">
-      <label>Number of rotis <span class="val" id="roti-count">2</span></label>
-      <input type="range" id="rotis" min="1" max="6" step="1" value="2" oninput="update()">
-    </div>
-  </div>
-  <div>
-    <h3>Steamed Rice</h3>
-    <div class="control">
-      <label>Cups of rice <span class="val" id="rice-count">1</span></label>
-      <input type="range" id="rice" min="0.5" max="3" step="0.5" value="1" oninput="update()">
-    </div>
-  </div>
-</div>
-
-<div id="comparison"></div>
-
-<script>
-const rotiPer = {cal:104,protein:3.1,carbs:18.3,fiber:1.9,fat:3.7,iron:1.1};
-const ricePer = {cal:206,protein:4.3,carbs:44.5,fiber:0.6,fat:0.4,iron:0.2};
-
-function update() {
-  const r = +document.getElementById('rotis').value;
-  const c = +document.getElementById('rice').value;
-  document.getElementById('roti-count').textContent = r;
-  document.getElementById('rice-count').textContent = c;
-
-  const roti = Object.fromEntries(Object.entries(rotiPer).map(([k,v]) => [k, v*r]));
-  const rice = Object.fromEntries(Object.entries(ricePer).map(([k,v]) => [k, v*c]));
-
-  function row(label, unit, rVal, riVal) {
-    const better = rVal < riVal ? 'roti' : 'rice';
-    const isCal = label === 'Calories';
-    return '<tr><td>' + label + '</td><td' + (isCal && better==='roti' ? ' style="font-weight:600"' : '') + '>' + rVal.toFixed(1) + unit + '</td><td' + (isCal && better==='rice' ? ' style="font-weight:600"' : '') + '>' + riVal.toFixed(1) + unit + '</td></tr>';
-  }
-
-  document.getElementById('comparison').innerHTML =
-    '<table style="margin-top:1.5rem"><tr><th>Nutrient</th><th>' + r + ' Roti</th><th>' + c + ' Cup Rice</th></tr>' +
-    row('Calories','kcal',roti.cal,rice.cal) +
-    row('Protein','g',roti.protein,rice.protein) +
-    row('Carbs','g',roti.carbs,rice.carbs) +
-    row('Fiber','g',roti.fiber,rice.fiber) +
-    row('Fat','g',roti.fat,rice.fat) +
-    row('Iron','mg',roti.iron,rice.iron) +
-    '</table>' +
-    '<p style="margin-top:1rem">Per roti: ~30g wheat flour. Per cup rice: ~185g cooked white rice. Values are approximate.</p>';
-}
-update();
-</script>
-<script type="application/json" id="yukti-meta">
-{"toolType":"comparison","title":"Roti vs Rice — Nutrition Comparison","inputs":["rotis","rice_cups"],"dataSources":[{"name":"USDA FoodData Central","url":"","live":false}],"assumptions":["Per roti: ~30g wheat flour","Per cup rice: ~185g cooked white rice"],"limitations":["Values are approximate averages"],"computedValues":{"primaryMetric":{"label":"Calories","value":"dynamic","unit":"kcal"}}}
-</script>
-</body></html>\`;
+    const html = '<!DOCTYPE html>' +
+'<html lang="en">' +
+'<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Roti vs Rice — Nutrition Comparison</title></head>' +
+'<body>' +
+'<h1>Roti vs Rice</h1>' +
+'<p class="subtitle">Adjust portions to compare nutrition per meal</p>' +
+'<div class="grid-2">' +
+'  <div>' +
+'    <h3>Roti (Wheat Chapati)</h3>' +
+'    <div class="control">' +
+'      <label>Number of rotis <span class="val" id="roti-count">2</span></label>' +
+'      <input type="range" id="rotis" min="1" max="6" step="1" value="2" oninput="update()">' +
+'    </div>' +
+'  </div>' +
+'  <div>' +
+'    <h3>Steamed Rice</h3>' +
+'    <div class="control">' +
+'      <label>Cups of rice <span class="val" id="rice-count">1</span></label>' +
+'      <input type="range" id="rice" min="0.5" max="3" step="0.5" value="1" oninput="update()">' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+'<div id="comparison"></div>' +
+'<script>' +
+'const rotiPer = {cal:104,protein:3.1,carbs:18.3,fiber:1.9,fat:3.7,iron:1.1};' +
+'const ricePer = {cal:206,protein:4.3,carbs:44.5,fiber:0.6,fat:0.4,iron:0.2};' +
+'function update() {' +
+'  const r = +document.getElementById("rotis").value;' +
+'  const c = +document.getElementById("rice").value;' +
+'  document.getElementById("roti-count").textContent = r;' +
+'  document.getElementById("rice-count").textContent = c;' +
+'  const roti = Object.fromEntries(Object.entries(rotiPer).map(([k,v]) => [k, v*r]));' +
+'  const rice = Object.fromEntries(Object.entries(ricePer).map(([k,v]) => [k, v*c]));' +
+'  function row(label, unit, rVal, riVal) {' +
+'    const better = rVal < riVal ? "roti" : "rice";' +
+'    const isCal = label === "Calories";' +
+'    return "<tr><td>" + label + "</td><td" + (isCal && better==="roti" ? " style=\\"font-weight:600\\"" : "") + ">" + rVal.toFixed(1) + unit + "</td><td" + (isCal && better==="rice" ? " style=\\"font-weight:600\\"" : "") + ">" + riVal.toFixed(1) + unit + "</td></tr>";' +
+'  }' +
+'  document.getElementById("comparison").innerHTML =' +
+'    "<table style=\\"margin-top:1.5rem\\"><tr><th>Nutrient</th><th>" + r + " Roti</th><th>" + c + " Cup Rice</th></tr>" +' +
+'    row("Calories","kcal",roti.cal,rice.cal) +' +
+'    row("Protein","g",roti.protein,rice.protein) +' +
+'    row("Carbs","g",roti.carbs,rice.carbs) +' +
+'    row("Fiber","g",roti.fiber,rice.fiber) +' +
+'    row("Fat","g",roti.fat,rice.fat) +' +
+'    row("Iron","mg",roti.iron,rice.iron) +' +
+'    "</table>" +' +
+'    "<p style=\\"margin-top:1rem\\">Per roti: ~30g wheat flour. Per cup rice: ~185g cooked white rice. Values are approximate.</p>";' +
+'}' +
+'update();' +
+'</script>' +
+'<script type="application/json" id="yukti-meta">' +
+'{"toolType":"comparison","title":"Roti vs Rice — Nutrition Comparison","inputs":["rotis","rice_cups"],"dataSources":[{"name":"USDA FoodData Central","url":"","live":false}],"assumptions":["Per roti: ~30g wheat flour","Per cup rice: ~185g cooked white rice"],"limitations":["Values are approximate averages"],"computedValues":{"primaryMetric":{"label":"Calories","value":"dynamic","unit":"kcal"}}}' +
+'</script>' +
+'</body></html>';
     return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 }

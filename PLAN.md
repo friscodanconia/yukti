@@ -156,4 +156,4 @@
 
 ## P4: Code quality
 
-- [ ] Example 2 in `prompt.ts` uses a template literal while Example 1 uses `+` concatenation (llm/prompt.ts:397): the system prompt instructs the LLM not to use backticks inside the outer template literal, yet Example 2 wraps its HTML in a nested template literal. The LLM imitates the nearest example — Example 2 primes it to use template literals and increases the first-attempt backtick-nesting failure rate. Fix: rewrite Example 2 using `+` concatenation to match Example 1.
+- [x] Example 2 in `prompt.ts` uses a template literal while Example 1 uses `+` concatenation (llm/prompt.ts:397): the system prompt instructs the LLM not to use backticks inside the outer template literal, yet Example 2 wraps its HTML in a nested template literal. The LLM imitates the nearest example — Example 2 primes it to use template literals and increases the first-attempt backtick-nesting failure rate. Fix: rewrite Example 2 using `+` concatenation to match Example 1.
