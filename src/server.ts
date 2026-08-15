@@ -467,10 +467,10 @@ export default {
         const refinePrompt = `Here is a Cloudflare Worker module that generates an interactive tool for: "${topic}"
 
 \`\`\`javascript
-${"${originalCode}"}
+${originalCode}
 \`\`\`
 
-The user wants this modification: "${"${instruction}"}"
+The user wants this modification: "${instruction}"
 
 Return the COMPLETE modified Worker module with the change applied. Return ONLY the JavaScript module — no explanation, no markdown fences. Keep everything that works, only change what the user asked for.`;
 

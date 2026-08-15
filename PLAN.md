@@ -157,3 +157,7 @@
 ## P4: Code quality
 
 - [x] Example 2 in `prompt.ts` uses a template literal while Example 1 uses `+` concatenation (llm/prompt.ts:397): the system prompt instructs the LLM not to use backticks inside the outer template literal, yet Example 2 wraps its HTML in a nested template literal. The LLM imitates the nearest example — Example 2 primes it to use template literals and increases the first-attempt backtick-nesting failure rate. Fix: rewrite Example 2 using `+` concatenation to match Example 1.
+
+## P1: Critical bug — refine prompt sends literal placeholders to LLM
+
+- [x] `/api/refine` prompt uses `${"${originalCode}"}` and `${"${instruction}"}` (server.ts:470,473): both expressions evaluate to the literal strings `${originalCode}` and `${instruction}` because double-quoted strings don't perform template interpolation. The LLM received placeholder text instead of the actual worker code and modification instruction — the refine feature was effectively non-functional. The unit test's `buildRefinePrompt` used correct interpolation (`${originalCode}`), masking the divergence. Fixed: changed both to plain `${originalCode}` and `${instruction}`.
