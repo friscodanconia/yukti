@@ -1645,10 +1645,13 @@ function App() {
               <div className="px-4 py-3 space-y-2 pb-8">
                 {(() => {
                   const capDescriptions: Record<string, string> = {
-                    "finance-apis": "Stock prices, crypto, mutual funds",
-                    "weather-apis": "Weather forecasts, air quality",
+                    "finance-apis": "Stock prices, crypto, mutual funds, currency exchange",
+                    "weather-apis": "Weather forecasts, air quality, sunrise/sunset",
                     "google-knowledge": "Knowledge Graph entities",
                     "youtube": "Video search and stats",
+                    "india-commodity-prices": "Live mandi prices from data.gov.in",
+                    "usda-nutrition": "USDA FoodData Central",
+                    "india-utilities": "PIN codes, IFSC codes",
                     "general": "Public APIs (no keys required)",
                   };
                   const granted = meta?.granted || [];

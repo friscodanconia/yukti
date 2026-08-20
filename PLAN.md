@@ -161,3 +161,11 @@
 ## P1: Critical bug — refine prompt sends literal placeholders to LLM
 
 - [x] `/api/refine` prompt uses `${"${originalCode}"}` and `${"${instruction}"}` (server.ts:470,473): both expressions evaluate to the literal strings `${originalCode}` and `${instruction}` because double-quoted strings don't perform template interpolation. The LLM received placeholder text instead of the actual worker code and modification instruction — the refine feature was effectively non-functional. The unit test's `buildRefinePrompt` used correct interpolation (`${originalCode}`), masking the divergence. Fixed: changed both to plain `${originalCode}` and `${instruction}`.
+
+## P3: Privacy cleanup
+
+- [x] `stats:recent` dead write in `trackEvent()` (server.ts:1073): after the P2 privacy fix that removed `recentQueries` from `/api/stats`, the `trackEvent()` function still wrote every generation's topic string (which commonly contains personal financial data — income, loan amounts, family details) to `stats:recent` KV. No endpoint reads this key anymore, so the data was stored but never served. This is a wasted KV write that unnecessarily persists sensitive user queries. Fixed: removed the `stats:recent` write block from `trackEvent()`.
+
+## P4: UX consistency
+
+- [x] Mobile capabilities inspector missing 3 entries vs desktop (client.tsx:1647): the mobile inspector's Capabilities tab only listed 5 capabilities (`finance-apis`, `weather-apis`, `google-knowledge`, `youtube`, `general`) while the desktop version listed 8 — `india-commodity-prices`, `usda-nutrition`, and `india-utilities` were absent from the mobile panel, causing tools using those capabilities to show no active capability on mobile. Fixed: matched the mobile `capDescriptions` map to the desktop version (all 8 entries with full descriptions).

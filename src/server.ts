@@ -1069,22 +1069,6 @@ async function trackEvent(
       });
     }
 
-    // Append to recent queries (keep last 50)
-    if (type === "generate" && data.topic) {
-      const recentRaw = await env.TOOLS_KV.get("stats:recent");
-      let recent: unknown[] = [];
-      try { recent = JSON.parse(recentRaw || "[]"); } catch {}
-      recent.unshift({
-        topic: data.topic,
-        runId: data.runId,
-        model: data.model,
-        totalMs: data.totalMs,
-        retried: data.retried,
-        at: new Date().toISOString(),
-      });
-      if (recent.length > 50) recent.length = 50;
-      await env.TOOLS_KV.put("stats:recent", JSON.stringify(recent));
-    }
   } catch (e) {
     console.warn("Analytics tracking failed:", e);
   }
