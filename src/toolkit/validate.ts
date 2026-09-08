@@ -117,13 +117,17 @@ export function injectBaseCSS(html: string, css: string, script?: string): strin
   const scriptTag = script ? `<script>${script}</script>` : "";
 
   if (html.includes("</head>") && html.includes("</body>")) {
-    return html
-      .replace("</head>", styleTag + "</head>")
-      .replace("</body>", scriptTag + "</body>");
+    // Use indexOf/lastIndexOf instead of replace() to avoid matching "</head>" or "</body>"
+    // inside JS string literals that precede the real closing tags.
+    const headClose = html.indexOf("</head>");
+    let result = html.slice(0, headClose) + styleTag + html.slice(headClose);
+    const bodyClose = result.lastIndexOf("</body>");
+    return result.slice(0, bodyClose) + scriptTag + result.slice(bodyClose);
   }
 
   if (html.includes("</head>")) {
-    return html.replace("</head>", styleTag + "</head>") + scriptTag;
+    const headClose = html.indexOf("</head>");
+    return html.slice(0, headClose) + styleTag + html.slice(headClose) + scriptTag;
   }
 
   if (!html.includes("<!DOCTYPE") && !html.includes("<html")) {

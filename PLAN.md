@@ -169,3 +169,21 @@
 ## P4: UX consistency
 
 - [x] Mobile capabilities inspector missing 3 entries vs desktop (client.tsx:1647): the mobile inspector's Capabilities tab only listed 5 capabilities (`finance-apis`, `weather-apis`, `google-knowledge`, `youtube`, `general`) while the desktop version listed 8 — `india-commodity-prices`, `usda-nutrition`, and `india-utilities` were absent from the mobile panel, causing tools using those capabilities to show no active capability on mobile. Fixed: matched the mobile `capDescriptions` map to the desktop version (all 8 entries with full descriptions).
+
+## P0: Slider fill reliability
+
+- [x] `injectBaseCSS` uses first-match `String.replace()` for `</head>` and `</body>` (validate.ts:121-122): LLM-generated tools frequently build HTML strings in JS that contain `</body>` (e.g. table row templates, iframe srcdoc) — these appear before the real closing tag in source, so `replace()` splices `BASE_SCRIPT` into the middle of a JS string literal, causing a syntax error or injecting raw script text as visible HTML. The slider fill init never runs. Fixed: replaced `.replace("</body>", ...)` with `lastIndexOf("</body>")` index-based splice; replaced `</head>` replace with `indexOf` for consistency.
+
+## P2: Input validation (continued)
+
+- [ ] `query` and `model` not validated in `/api/me/tools` POST (server.ts:184-199): POST validates `runId` and `toolUrl` but stores `query` and `model` verbatim with no type or length check. An authenticated user can POST a 25 MB `query` (KV value size cap) and fill 100 tool slots (2.5 GB per uid). `model` has no format check; a non-string value crashes the `.split("/").pop()` display call in the client. Fix: add `typeof query !== "string" || query.length > 2000` and `typeof model !== "string" || model.length > 200` guards returning 400.
+
+- [ ] DELETE `/api/me/tools` accepts any `runId` without format validation (server.ts:202-214): the POST handler has a `^[a-z0-9]{8}$` guard on `runId` (added in earlier security fix) but the DELETE handler has none. `runId: ""` or `runId: undefined` passes through to `tools.filter()` which silently no-ops (filter condition is always true), returning `{ ok: true }` for a non-delete. Fix: add `if (!runId || !/^[a-z0-9]{8}$/.test(runId)) return 400` at the start of the DELETE handler, matching the POST pattern.
+
+## P2: Data integrity
+
+- [ ] TOCTOU race on user tool list KV (server.ts:195-213): both POST and DELETE follow read→modify→write, so two concurrent requests (double-click Save, or Save+Delete from two tabs) each read the stale list and the second write silently overwrites the first — a user can permanently lose a saved tool. The analytics-counter race was noted in PLAN.md with a `|| 0` guard but this user-data race was not addressed. Fix: switch per-tool storage to individual KV keys (`user:${uid}:tool:${runId}`) so each save/delete is an atomic independent operation and reads are not needed for writes.
+
+## P3: Security
+
+- [ ] No Content-Security-Policy on `/tool/:runId` responses (server.ts:547-565): tool HTML executes in the full `yukti.app` origin with no CSP header, so LLM-generated `fetch('/api/me')` inside a tool's `<script>` carries the session cookie and can exfiltrate the user's saved-tools list. Fix (short-term): add `Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src * data:; connect-src *; form-action 'none'; frame-ancestors 'self'` to all `/tool/` responses. Long-term: serve tools from an isolated subdomain so cookies don't match the main API domain.
