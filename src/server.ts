@@ -192,6 +192,12 @@ export default {
       if (!toolUrl || !toolUrl.startsWith("/tool/")) {
         return Response.json({ ok: false, error: "Invalid toolUrl" }, { status: 400 });
       }
+      if (typeof query !== "string" || query.length > 2000) {
+        return Response.json({ ok: false, error: "Invalid query" }, { status: 400 });
+      }
+      if (typeof model !== "string" || model.length > 200) {
+        return Response.json({ ok: false, error: "Invalid model" }, { status: 400 });
+      }
       const userData = await getUserData(env, uid);
       const tool = { runId, query, toolUrl, model, savedAt: new Date().toISOString() };
       userData.tools = [tool, ...userData.tools.filter((t: any) => t.runId !== runId)].slice(0, 100);
