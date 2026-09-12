@@ -214,6 +214,9 @@ export default {
         return Response.json({ ok: false, error: "Invalid request body" }, { status: 400 });
       }
       const { runId } = body;
+      if (!runId || !/^[a-z0-9]{8}$/.test(runId)) {
+        return Response.json({ ok: false, error: "Invalid runId" }, { status: 400 });
+      }
       const userData = await getUserData(env, uid);
       userData.tools = userData.tools.filter((t: any) => t.runId !== runId);
       await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });

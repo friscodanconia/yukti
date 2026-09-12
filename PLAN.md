@@ -178,7 +178,7 @@
 
 - [x] `query` and `model` not validated in `/api/me/tools` POST (server.ts:184-199): POST validates `runId` and `toolUrl` but stores `query` and `model` verbatim with no type or length check. An authenticated user can POST a 25 MB `query` (KV value size cap) and fill 100 tool slots (2.5 GB per uid). `model` has no format check; a non-string value crashes the `.split("/").pop()` display call in the client. Fix: add `typeof query !== "string" || query.length > 2000` and `typeof model !== "string" || model.length > 200` guards returning 400.
 
-- [ ] DELETE `/api/me/tools` accepts any `runId` without format validation (server.ts:202-214): the POST handler has a `^[a-z0-9]{8}$` guard on `runId` (added in earlier security fix) but the DELETE handler has none. `runId: ""` or `runId: undefined` passes through to `tools.filter()` which silently no-ops (filter condition is always true), returning `{ ok: true }` for a non-delete. Fix: add `if (!runId || !/^[a-z0-9]{8}$/.test(runId)) return 400` at the start of the DELETE handler, matching the POST pattern.
+- [x] DELETE `/api/me/tools` accepts any `runId` without format validation (server.ts:202-214): the POST handler has a `^[a-z0-9]{8}$` guard on `runId` (added in earlier security fix) but the DELETE handler has none. `runId: ""` or `runId: undefined` passes through to `tools.filter()` which silently no-ops (filter condition is always true), returning `{ ok: true }` for a non-delete. Fix: add `if (!runId || !/^[a-z0-9]{8}$/.test(runId)) return 400` at the start of the DELETE handler, matching the POST pattern.
 
 ## P2: Data integrity
 
