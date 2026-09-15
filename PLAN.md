@@ -182,7 +182,7 @@
 
 ## P2: Data integrity
 
-- [ ] TOCTOU race on user tool list KV (server.ts:195-213): both POST and DELETE follow read→modify→write, so two concurrent requests (double-click Save, or Save+Delete from two tabs) each read the stale list and the second write silently overwrites the first — a user can permanently lose a saved tool. The analytics-counter race was noted in PLAN.md with a `|| 0` guard but this user-data race was not addressed. Fix: switch per-tool storage to individual KV keys (`user:${uid}:tool:${runId}`) so each save/delete is an atomic independent operation and reads are not needed for writes.
+- [x] TOCTOU race on user tool list KV (server.ts:195-213): both POST and DELETE follow read→modify→write, so two concurrent requests (double-click Save, or Save+Delete from two tabs) each read the stale list and the second write silently overwrites the first — a user can permanently lose a saved tool. The analytics-counter race was noted in PLAN.md with a `|| 0` guard but this user-data race was not addressed. Fix: switch per-tool storage to individual KV keys (`user:${uid}:tool:${runId}`) so each save/delete is an atomic independent operation and reads are not needed for writes. GET lazily migrates legacy `user:${uid}` list to individual keys on first access; all 27 unit assertions pass (scratchpad/test-toctou-fix.mjs).
 
 ## P3: Security
 

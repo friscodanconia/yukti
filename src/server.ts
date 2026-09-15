@@ -173,8 +173,44 @@ export default {
     // ── API: User data ────────────────────────────────────────
     if (url.pathname === "/api/me" && request.method === "GET") {
       if (!env.TOOLS_KV) return Response.json({ tools: [] });
-      const userData = await getUserData(env, uid);
-      return Response.json(userData);
+
+      // Fetch individual tool keys (new atomic format) and legacy list key in parallel
+      const [listResult, legacyRaw] = await Promise.all([
+        env.TOOLS_KV.list({ prefix: `user:${uid}:tool:` }),
+        env.TOOLS_KV.get(`user:${uid}`),
+      ]);
+
+      // Fetch all individual tool values in parallel
+      const toolValues = await Promise.all(listResult.keys.map(k => env.TOOLS_KV.get(k.name)));
+      const individualTools: any[] = toolValues
+        .map(v => { try { return v ? JSON.parse(v) : null; } catch { return null; } })
+        .filter(Boolean);
+
+      // One-time lazy migration of legacy list-based storage to individual keys
+      if (legacyRaw) {
+        try {
+          const legacyParsed = JSON.parse(legacyRaw);
+          const legacyList: any[] = Array.isArray(legacyParsed.tools) ? legacyParsed.tools : [];
+          const existingIds = new Set(individualTools.map((t: any) => t.runId));
+          // Only migrate tools without an individual key yet (avoid overwriting newer saves)
+          const toMigrate = legacyList.filter((t: any) => t?.runId && !existingIds.has(t.runId));
+          if (toMigrate.length > 0) {
+            await Promise.all(toMigrate.map((t: any) =>
+              env.TOOLS_KV.put(`user:${uid}:tool:${t.runId}`, JSON.stringify(t), { expirationTtl: 86400 * 365 })
+            ));
+            individualTools.push(...toMigrate);
+          }
+          // Delete legacy key — idempotent if two concurrent GETs race here
+          await env.TOOLS_KV.delete(`user:${uid}`);
+        } catch (err) {
+          console.warn(`[/api/me] Legacy migration failed for uid=${uid}:`, err);
+        }
+      }
+
+      const tools = individualTools
+        .sort((a: any, b: any) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+        .slice(0, 100);
+      return Response.json({ tools });
     }
 
     if (url.pathname === "/api/me/tools" && request.method === "POST") {
@@ -198,11 +234,10 @@ export default {
       if (typeof model !== "string" || model.length > 200) {
         return Response.json({ ok: false, error: "Invalid model" }, { status: 400 });
       }
-      const userData = await getUserData(env, uid);
+      // Atomic write — no read needed, eliminates TOCTOU race on concurrent saves
       const tool = { runId, query, toolUrl, model, savedAt: new Date().toISOString() };
-      userData.tools = [tool, ...userData.tools.filter((t: any) => t.runId !== runId)].slice(0, 100);
-      await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });
-      return Response.json({ ok: true, tools: userData.tools });
+      await env.TOOLS_KV.put(`user:${uid}:tool:${runId}`, JSON.stringify(tool), { expirationTtl: 86400 * 365 });
+      return Response.json({ ok: true });
     }
 
     if (url.pathname === "/api/me/tools" && request.method === "DELETE") {
@@ -217,10 +252,9 @@ export default {
       if (!runId || !/^[a-z0-9]{8}$/.test(runId)) {
         return Response.json({ ok: false, error: "Invalid runId" }, { status: 400 });
       }
-      const userData = await getUserData(env, uid);
-      userData.tools = userData.tools.filter((t: any) => t.runId !== runId);
-      await env.TOOLS_KV.put(`user:${uid}`, JSON.stringify(userData), { expirationTtl: 86400 * 365 });
-      return Response.json({ ok: true, tools: userData.tools });
+      // Atomic delete — no read needed, eliminates TOCTOU race on concurrent deletes
+      await env.TOOLS_KV.delete(`user:${uid}:tool:${runId}`);
+      return Response.json({ ok: true });
     }
 
     // ── API: Check if query needs clarification ────────────
