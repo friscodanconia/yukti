@@ -587,9 +587,13 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
           if (html) {
             // ?embed=1 is used by handleLoadTool in the app — return raw HTML
             // without OG tags or footer so they don't render inside the iframe.
+            const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src * data:; connect-src *; form-action 'none'; frame-ancestors 'self'";
             if (url.searchParams.get("embed") === "1") {
               return new Response(html, {
-                headers: { "Content-Type": "text/html; charset=utf-8" },
+                headers: {
+                  "Content-Type": "text/html; charset=utf-8",
+                  "Content-Security-Policy": CSP,
+                },
               });
             }
             const topic = escapeHtml(metadata?.topic || "Interactive Tool");
@@ -603,7 +607,10 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
             let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
             enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");
             return new Response(enriched, {
-              headers: { "Content-Type": "text/html; charset=utf-8" },
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Content-Security-Policy": CSP,
+              },
             });
           }
         } catch (err) {
