@@ -187,3 +187,7 @@
 ## P3: Security
 
 - [x] No Content-Security-Policy on `/tool/:runId` responses (server.ts:547-565): tool HTML executes in the full `yukti.app` origin with no CSP header, so LLM-generated `fetch('/api/me')` inside a tool's `<script>` carries the session cookie and can exfiltrate the user's saved-tools list. Fix (short-term): add `Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src * data:; connect-src *; form-action 'none'; frame-ancestors 'self'` to all `/tool/` responses. Long-term: serve tools from an isolated subdomain so cookies don't match the main API domain.
+
+## P2: Recurring bugs (continued 11)
+
+- [x] `/tool/:runId` enrichment uses first-match `String.replace()` for `</head>` and `</body>` (server.ts:607-608): the same bug fixed in `injectBaseCSS` (P0) — LLM-generated tools with `</body>` in a JS string literal (e.g., iframe srcdoc, table row templates) cause `replace()` to inject the OG-tags / footer into the middle of that string, breaking the page. Fix: use `indexOf("</head>")` for head injection and `lastIndexOf("</body>")` for footer injection, matching the pattern in `injectBaseCSS` in `validate.ts`.

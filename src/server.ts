@@ -604,8 +604,16 @@ Return the COMPLETE modified Worker module with the change applied. Return ONLY 
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Yukti — ${topic}">`.replace(/\n/g, '\n');
             const footer = `<div style="text-align:center;padding:1.5rem 1rem 1rem;margin-top:2rem;border-top:1px solid rgba(191,176,154,0.2);font-family:'Outfit',system-ui,sans-serif;font-size:0.6875rem;color:#96897a;">Built with <a href="/" style="color:#c2652a;text-decoration:none;font-weight:600;">Yukti</a> — interactive tools, built on the fly</div>`;
-            let enriched = html.replace(/<\/head>/i, ogTags + "\n</head>");
-            enriched = enriched.replace(/<\/body>/i, footer + "\n</body>");
+            // Use indexOf/lastIndexOf instead of replace() to avoid matching "</head>" or "</body>"
+            // inside JS string literals that precede the real closing tags (same pattern as injectBaseCSS).
+            const headIdx = html.indexOf("</head>");
+            let enriched = headIdx !== -1
+              ? html.slice(0, headIdx) + ogTags + "\n</head>" + html.slice(headIdx + 7)
+              : html;
+            const bodyIdx = enriched.lastIndexOf("</body>");
+            enriched = bodyIdx !== -1
+              ? enriched.slice(0, bodyIdx) + footer + "\n</body>" + enriched.slice(bodyIdx + 7)
+              : enriched + footer;
             return new Response(enriched, {
               headers: {
                 "Content-Type": "text/html; charset=utf-8",
