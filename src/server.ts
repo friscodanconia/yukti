@@ -706,6 +706,11 @@ calc();
         return Response.json({ error: "code must be 100,000 characters or fewer" }, { status: 400 });
       }
 
+      const rerunValidation = validateWorkerCode(code);
+      if (!rerunValidation.valid) {
+        return Response.json({ error: `Code validation failed: ${rerunValidation.error}` }, { status: 422 });
+      }
+
       try {
         const runId = generateRunId();
         const start = Date.now();

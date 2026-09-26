@@ -191,3 +191,11 @@
 ## P2: Recurring bugs (continued 11)
 
 - [x] `/tool/:runId` enrichment uses first-match `String.replace()` for `</head>` and `</body>` (server.ts:607-608): the same bug fixed in `injectBaseCSS` (P0) — LLM-generated tools with `</body>` in a JS string literal (e.g., iframe srcdoc, table row templates) cause `replace()` to inject the OG-tags / footer into the middle of that string, breaking the page. Fix: use `indexOf("</head>")` for head injection and `lastIndexOf("</body>")` for footer injection, matching the pattern in `injectBaseCSS` in `validate.ts`.
+
+## P2: Security fixes (continued 3)
+
+- [x] `/api/rerun` skips `validateWorkerCode()` before executing client-supplied code (server.ts:712): both `/api/stream` (line 354) and `/api/refine` (line 525) call `validateWorkerCode(code)` before `executeInWorker()`, but `/api/rerun` calls `executeInWorker()` directly. An authenticated user can POST code containing `eval()`, `new Function()`, `new WebSocket()`, `XMLHttpRequest`, or `globalThis.fetch =` overrides and have them executed in the worker sandbox and saved to KV under a fresh `runId`. Fix: add `validateWorkerCode(code)` guard before `executeInWorker()` in the `/api/rerun` handler, returning 422 if invalid (matching `/api/refine` pattern).
+
+## P2: Recurring bugs (continued 12)
+
+- [ ] `resetToHome()` never aborts in-flight requests (client.tsx:353): `resetToHome` clears React state but never calls `abortControllerRef.current?.abort()`. If `/api/refine` or a stream generation is in progress when the user clicks "New", the request continues running and its `setHtml`/`setCode`/`setRunId`/`setToolUrl` callbacks fire against the already-cleared state, causing stale results to reappear on the blank home screen. Fix: add `abortControllerRef.current?.abort(); abortControllerRef.current = null;` at the start of `resetToHome`, matching the pattern in `handleLoadTool` (line 402).
