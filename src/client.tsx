@@ -351,6 +351,10 @@ function App() {
   };
 
   const resetToHome = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setHtml(null); setCode(null); setMeta(null); setError(null);
     setRunId(null); setToolUrl(null); setQuery(""); setShowDetails(false);
     setRefineInput(""); setRefining(false); setMobileRefineOpen(false);
