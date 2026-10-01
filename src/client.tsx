@@ -1158,13 +1158,21 @@ function App() {
                           type="button"
                           onClick={async () => {
                             if (!code) return;
+                            // Cancel any in-flight generation or prior refine/refresh
+                            if (abortControllerRef.current) {
+                              abortControllerRef.current.abort();
+                            }
+                            const controller = new AbortController();
+                            abortControllerRef.current = controller;
                             setRefining(true);
                             try {
                               const res = await fetch("/api/rerun", {
                                 method: "POST",
+                                signal: controller.signal,
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ code, topic: query }),
                               });
+                              if (controller.signal.aborted) return;
                               const text = await res.text();
                               let data: Record<string, unknown>;
                               try { data = JSON.parse(text); } catch { setError("Invalid response from server"); return; }
@@ -1178,8 +1186,13 @@ function App() {
                                 if (data.meta) setMeta(data.meta as typeof meta);
                               }
                             } catch (err) {
+                              if (err instanceof Error && err.name === "AbortError") return;
                               setError(err instanceof Error ? err.message : "Refresh failed");
-                            } finally { setRefining(false); }
+                            } finally {
+                              if (!controller.signal.aborted) {
+                                setRefining(false);
+                              }
+                            }
                           }}
                           className="text-sm text-[#78716C] hover:text-[#C2410C] transition-colors font-medium"
                           title="Re-run the same code to refresh live data"
