@@ -355,6 +355,10 @@ function App() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    // Clear loading/stage explicitly — the aborted stream's finally block skips
+    // setLoading(false) when controller.signal.aborted is true, so we must do it here
+    // or hasResult stays true (via loading) and the user is stuck in an infinite spinner.
+    setLoading(false); setStreamStage(null);
     setHtml(null); setCode(null); setMeta(null); setError(null);
     setRunId(null); setToolUrl(null); setQuery(""); setShowDetails(false);
     setRefineInput(""); setRefining(false); setMobileRefineOpen(false);
