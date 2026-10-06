@@ -502,6 +502,9 @@ export default {
       if (instruction.length > 2000) {
         return Response.json({ error: "instruction must be 2,000 characters or fewer" }, { status: 400 });
       }
+      if (topic && topic.length > 2000) {
+        return Response.json({ error: "topic must be 2,000 characters or fewer" }, { status: 400 });
+      }
 
       try {
         const runId = generateRunId();
@@ -704,6 +707,9 @@ calc();
       }
       if (code.length > 100_000) {
         return Response.json({ error: "code must be 100,000 characters or fewer" }, { status: 400 });
+      }
+      if (topic && topic.length > 2000) {
+        return Response.json({ error: "topic must be 2,000 characters or fewer" }, { status: 400 });
       }
 
       const rerunValidation = validateWorkerCode(code);
