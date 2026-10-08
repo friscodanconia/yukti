@@ -431,6 +431,7 @@ function App() {
       if (res.ok) {
         const loadedHtml = await res.text();
         setHtml(loadedHtml);
+        setSaved(true);
       } else {
         setError("Tool expired or not found");
       }
