@@ -215,3 +215,7 @@
 ## P4: UX consistency (continued)
 
 - [x] `handleLoadTool` shows "Save" button instead of "Saved" for already-saved tools (client.tsx:419): `setSaved(false)` is called unconditionally at the start of `handleLoadTool`, so after successfully loading a tool from My Tools the Save button reads "Save" and is enabled, even though the tool IS already saved. The desktop inspector save button is `disabled={saved}`, so this re-enables it. The user clicking "Save" re-saves the tool with a new `savedAt` timestamp — harmless but confusing. Fix: add `setSaved(true)` after `setHtml(loadedHtml)` in the `res.ok` branch of `handleLoadTool`, since a successfully loaded tool is by definition already in the user's saved list.
+
+## Status
+
+All tasks are complete as of 2026-10-15. No unchecked items remain. Add new tasks here when new bugs or improvements are identified.
