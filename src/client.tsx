@@ -409,8 +409,9 @@ function App() {
   const handleLoadTool = async (tool: SavedTool) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setLoading(true);
     setHtml(null);
     setCode(null);
@@ -427,19 +428,24 @@ function App() {
     setRunId(tool.runId);
     setToolUrl(tool.toolUrl);
     try {
-      const res = await fetch(tool.toolUrl + "?embed=1");
+      const res = await fetch(tool.toolUrl + "?embed=1", { signal: controller.signal });
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const loadedHtml = await res.text();
+        if (controller.signal.aborted) return;
         setHtml(loadedHtml);
         setSaved(true);
       } else {
         setError("Tool expired or not found");
       }
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       console.warn("handleLoadTool failed for", tool.toolUrl, err);
       setError("Failed to load saved tool");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 

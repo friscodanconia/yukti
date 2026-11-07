@@ -216,6 +216,10 @@
 
 - [x] `handleLoadTool` shows "Save" button instead of "Saved" for already-saved tools (client.tsx:419): `setSaved(false)` is called unconditionally at the start of `handleLoadTool`, so after successfully loading a tool from My Tools the Save button reads "Save" and is enabled, even though the tool IS already saved. The desktop inspector save button is `disabled={saved}`, so this re-enables it. The user clicking "Save" re-saves the tool with a new `savedAt` timestamp — harmless but confusing. Fix: add `setSaved(true)` after `setHtml(loadedHtml)` in the `res.ok` branch of `handleLoadTool`, since a successfully loaded tool is by definition already in the user's saved list.
 
+## P2: Recurring bugs (continued 15)
+
+- [x] `handleLoadTool` not integrated with `abortControllerRef` (client.tsx:409): unlike `handleRefine` and the desktop Refresh button (both fixed to create/register an AbortController), `handleLoadTool` aborted the previous controller and set `abortControllerRef.current = null` but never created a new one for its own fetch. If the user clicked "New" (triggering `resetToHome`) or started a new generation while a saved-tool fetch was in flight, `resetToHome`/`generate` found `null` in the ref and did nothing — the stale `handleLoadTool` fetch completed and called `setHtml`/`setSaved`/`setLoading(false)`, overwriting the cleared state and making a stale tool reappear on the blank home screen. Fixed: `handleLoadTool` now creates a new `AbortController`, registers it with `abortControllerRef`, passes its `signal` to the fetch, discards results on abort via `if (controller.signal.aborted) return` guards after the fetch and after `res.text()`, catches `AbortError` and returns early, and guards `setLoading(false)` in `finally` with `!controller.signal.aborted` — matching the pattern used in `handleRefine` and the desktop Refresh button.
+
 ## Status
 
-All tasks are complete as of 2026-10-15. No unchecked items remain. Add new tasks here when new bugs or improvements are identified.
+All tasks are complete as of 2026-11-07. No unchecked items remain. Add new tasks here when new bugs or improvements are identified.
